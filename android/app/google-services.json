@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "535907930790",
+    "firebase_url": "https://aes-ajce-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "aes-ajce",
+    "storage_bucket": "aes-ajce.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:535907930790:android:92c92d47b6e97774359a67",
+        "android_client_info": {
+          "package_name": "ajce.staffcontacts"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "535907930790-ff2n3d4v5j5g5c5fssvh17ctmqpgiita.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD86ik5A5mS1z2RQTqWFYg9c85_mpJCgww"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "535907930790-ff2n3d4v5j5g5c5fssvh17ctmqpgiita.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
