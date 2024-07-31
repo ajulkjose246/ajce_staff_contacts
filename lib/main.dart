@@ -1,3 +1,4 @@
+import 'package:ajce_staff_contacts/components/custom_overlay.dart';
 import 'package:ajce_staff_contacts/firebase_options.dart';
 import 'package:ajce_staff_contacts/provider/favorites_provider.dart';
 import 'package:ajce_staff_contacts/authentication/auth_page.dart';
@@ -18,26 +19,37 @@ Future<void> main() async {
   await Hive.openBox('deptDataBox');
   await Hive.openBox('userDataBox');
   await Hive.openBox('favoriteStaff');
-
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => FavoritesProvider()),
       ],
-      child: MyApp(),
+      child: const MyApp(),
+    ),
+  );
+}
+
+@pragma("vm:entry-point")
+void overlayMain() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(
+    const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: TrueCallerOverlay(),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       routes: {
-        '/': (context) => ContainerPage(),
-        '/auth': (context) => AuthPage(),
+        '/': (context) => const ContainerPage(),
+        '/auth': (context) => const AuthPage(),
       },
       initialRoute: '/auth',
     );

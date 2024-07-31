@@ -22,14 +22,30 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   }
 
   Future<void> _loadData() async {
-    await Future.wait([
-      GetDept().getDepartmentsAPI(),
-      GetStaff().getStaffContactsAPI(),
-      GetStaffGroups().getStaffGroupsAPI(),
-    ]);
-    setState(() {
-      _isLoading = false;
-    });
+    try {
+      await Future.wait([
+        GetDept().getDepartmentsAPI(),
+        GetStaff().getStaffContactsAPI(),
+        GetStaffGroups().getStaffGroupsAPI(),
+      ]);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    // Add any necessary cleanup here
+    super.dispose();
   }
 
   @override
