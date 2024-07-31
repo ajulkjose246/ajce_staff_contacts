@@ -14,7 +14,7 @@ class TrueCallerOverlay extends StatefulWidget {
 class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
   bool isGold = true;
 
-  String phoneNumber = '';
+  // String phoneNumber = '';
 
   final _goldColors = const [
     Color(0xFFa2790d),
@@ -45,11 +45,7 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
       switch (event.status) {
         case PhoneStateStatus.CALL_INCOMING:
         case PhoneStateStatus.CALL_STARTED:
-          _showOverlayWindow();
-          print(event.number);
-          setState(() {
-            phoneNumber = event.number!;
-          });
+          _showOverlayWindow(event.number);
           break;
         case PhoneStateStatus.CALL_ENDED:
           _hideOverlayWindow();
@@ -70,14 +66,15 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
     await SystemAlertWindow.requestPermissions(prefMode: prefMode);
   }
 
-  void _showOverlayWindow() async {
+  void _showOverlayWindow(String? phoneNumber) async {
     if (!_isShowingWindow) {
       await SystemAlertWindow.sendMessageToOverlay('show system window');
       SystemAlertWindow.showSystemWindow(
-          height: 200,
-          width: MediaQuery.of(context).size.width.floor(),
-          gravity: SystemWindowGravity.CENTER,
-          prefMode: prefMode);
+        height: 200,
+        width: MediaQuery.of(context).size.width.floor(),
+        gravity: SystemWindowGravity.CENTER,
+        prefMode: prefMode,
+      );
       setState(() {
         _isShowingWindow = true;
       });
@@ -152,7 +149,7 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(phoneNumber),
+                              Text("phoneNumber"),
                               Text("Last call - 1 min ago"),
                             ],
                           ),

@@ -41,7 +41,6 @@ class DeptCrudOperations {
   }
 
   Map<String, dynamic>? getDepartmentByCode(int deptCode) {
-    print(deptCode);
     final departmentData = readDepartments();
 
     if (departmentData.containsKey(deptCode)) {

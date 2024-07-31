@@ -28,19 +28,19 @@ class AuthService {
           await FirebaseAuth.instance.signInWithCredential(credential);
 
       // Check if the email contains "@amaljyothi.ac.in"
-      if (userCredential.user?.providerData[0].email
-              ?.contains('@mca.ajce.in') ??
-          false) {
-        Fluttertoast.showToast(msg: "Sign-in successful.");
+      // if (userCredential.user?.providerData[0].email
+      //         ?.contains('@mca.ajce.in') ??
+      //     false) {
+      Fluttertoast.showToast(msg: "Sign-in successful.");
 
-        return userCredential;
-      } else {
-        FirebaseAuth.instance.signOut();
-        GoogleSignIn().signOut();
-        Fluttertoast.showToast(
-            msg: "Sign-in failed. Use your '@mca.ajce.in' email.");
-        return null;
-      }
+      return userCredential;
+      // } else {
+      //   FirebaseAuth.instance.signOut();
+      //   GoogleSignIn().signOut();
+      //   Fluttertoast.showToast(
+      //       msg: "Sign-in failed. Use your '@mca.ajce.in' email.");
+      //   return null;
+      // }
     } catch (e) {
       Fluttertoast.showToast(msg: "An error occurred: ${e.toString()}");
       return null;
