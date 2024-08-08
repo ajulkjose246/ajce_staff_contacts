@@ -21,7 +21,6 @@ class AuthPage extends StatelessWidget {
                 .readSpecificStaff('binumonjosephk@amaljyothi.ac.in', 'user');
             if (staffData.isNotEmpty) {
               var firstValue = staffData.values.first;
-              print(firstValue);
               UserData().writeUserData(firstValue);
             } else {
               print('No staff data found for the specified email.');

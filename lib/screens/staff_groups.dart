@@ -11,20 +11,47 @@ class StaffGroups extends StatefulWidget {
 }
 
 class _StaffGroupsState extends State<StaffGroups> {
+  var filterValue = 1;
   @override
   Widget build(BuildContext context) {
     // var staffData = StaffCrudOperations()
     //     .readSpecificStaff(widget.staffCode, 'staff')
     //     .values
     //     .toList();
-    var staffGroup =
-        StaffGroupCrudOperations().readStaffGroups().values.toList();
+
+    var staffGroup = [];
+    if (filterValue == 1) {
+      staffGroup =
+          StaffGroupCrudOperations().readStaffGroups("college").values.toList();
+    } else if (filterValue == 2) {
+      staffGroup =
+          StaffGroupCrudOperations().readStaffGroups("events").values.toList();
+    } else {
+      staffGroup = StaffGroupCrudOperations()
+          .readStaffGroups("departments")
+          .values
+          .toList();
+    }
     return Container(
       color: const Color.fromRGBO(236, 241, 244, 1),
       child: Padding(
         padding: const EdgeInsets.all(10),
         child: Column(
           children: [
+            Padding(
+              padding: const EdgeInsets.all(10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Filter buttons
+                  _buildFilterButton(1, "College"),
+                  const SizedBox(width: 10),
+                  _buildFilterButton(3, "Departments"),
+                  const SizedBox(width: 10),
+                  _buildFilterButton(2, "Events"),
+                ],
+              ),
+            ),
             Expanded(
               child: ListView.builder(
                 itemCount: staffGroup.length,
@@ -85,6 +112,33 @@ class _StaffGroupsState extends State<StaffGroups> {
             )
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildFilterButton(int value, String label) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          filterValue = value;
+        });
+      },
+      child: Container(
+        width: 100,
+        height: 50,
+        decoration: BoxDecoration(
+          color: filterValue != value
+              ? Colors.white
+              : const Color.fromRGBO(137, 14, 79, 1),
+          borderRadius: BorderRadius.circular(50),
+        ),
+        child: Center(
+            child: Text(
+          label,
+          style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: filterValue != value ? Colors.black : Colors.white),
+        )),
       ),
     );
   }

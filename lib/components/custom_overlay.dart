@@ -1,6 +1,5 @@
-import 'dart:isolate';
-
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:phone_state/phone_state.dart';
 import 'package:system_alert_window/system_alert_window.dart';
 
@@ -13,8 +12,6 @@ class TrueCallerOverlay extends StatefulWidget {
 
 class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
   bool isGold = true;
-
-  // String phoneNumber = '';
 
   final _goldColors = const [
     Color(0xFFa2790d),
@@ -30,8 +27,6 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
   ];
   bool _isShowingWindow = false;
   SystemWindowPrefMode prefMode = SystemWindowPrefMode.OVERLAY;
-  SendPort? homePort;
-  String? latestMessageFromOverlay;
 
   @override
   void initState() {
@@ -45,7 +40,8 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
       switch (event.status) {
         case PhoneStateStatus.CALL_INCOMING:
         case PhoneStateStatus.CALL_STARTED:
-          _showOverlayWindow(event.number);
+          _showOverlayWindow(event.number ?? "Unknown");
+          print(event.number);
           break;
         case PhoneStateStatus.CALL_ENDED:
           _hideOverlayWindow();
@@ -56,28 +52,24 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
     });
   }
 
-  @override
-  void dispose() {
-    SystemAlertWindow.removeOnClickListener();
-    super.dispose();
-  }
-
   Future<void> _requestPermissions() async {
     await SystemAlertWindow.requestPermissions(prefMode: prefMode);
   }
 
-  void _showOverlayWindow(String? phoneNumber) async {
+  void _showOverlayWindow(String phoneNumber) async {
     if (!_isShowingWindow) {
-      await SystemAlertWindow.sendMessageToOverlay('show system window');
       SystemAlertWindow.showSystemWindow(
         height: 200,
         width: MediaQuery.of(context).size.width.floor(),
         gravity: SystemWindowGravity.CENTER,
         prefMode: prefMode,
+        notificationBody: phoneNumber,
       );
       setState(() {
         _isShowingWindow = true;
       });
+    } else {
+      Fluttertoast.showToast(msg: "not showing");
     }
   }
 
@@ -88,6 +80,12 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
       });
       await SystemAlertWindow.closeSystemWindow(prefMode: prefMode);
     }
+  }
+
+  @override
+  void dispose() {
+    SystemAlertWindow.removeOnClickListener();
+    super.dispose();
   }
 
   @override
@@ -111,9 +109,6 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
               setState(() {
                 isGold = !isGold;
               });
-              // FlutterOverlayWindow.getOverlayPosition().then((value) {
-              //   log("Overlay Position: $value");
-              // });
             },
             child: Stack(
               children: [
@@ -146,12 +141,14 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("phoneNumber"),
-                              Text("Last call - 1 min ago"),
-                            ],
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text("phoneNumber"),
+                                Text("Last call - 1 min ago"),
+                              ],
+                            ),
                           ),
                           Text(
                             "Flutter Overlay",
@@ -160,7 +157,7 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
                           ),
                         ],
                       ),
-                    )
+                    ),
                   ],
                 ),
                 Positioned(

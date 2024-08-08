@@ -40,7 +40,55 @@ class StaffCrudOperations {
     }
   }
 
-  // Read Specific Data
+  Map<String, int> getStaffGenderCounts() {
+    final rawData = _staffDataBox.get('staff', defaultValue: {});
+    int maleCount = 0;
+    int femaleCount = 0;
+
+    for (var entry in rawData.values) {
+      if (entry.containsKey('gender')) {
+        final gender = entry['gender'].toString().toLowerCase();
+        if (gender == 'male') {
+          maleCount++;
+        } else if (gender == 'female') {
+          femaleCount++;
+        }
+      }
+    }
+
+    return {
+      'totalMale': maleCount,
+      'totalFemale': femaleCount,
+    };
+  }
+
+  Map<String, int> getStaffGenderCountsByDepartment(int department) {
+    final rawData = _staffDataBox.get('staff', defaultValue: {});
+
+    int maleCount = 0;
+    int femaleCount = 0;
+
+    final filteredData = rawData.values.where((entry) =>
+        entry.containsKey('deptCode') &&
+        entry['deptCode'] == department); // Ensure exact match
+
+    for (var entry in filteredData) {
+      if (entry.containsKey('gender')) {
+        final gender = entry['gender'].toString().toLowerCase();
+        if (gender == 'male') {
+          maleCount++;
+        } else if (gender == 'female') {
+          femaleCount++;
+        }
+      }
+    }
+
+    return {
+      'departmentMale': maleCount,
+      'departmentFemale': femaleCount,
+    };
+  }
+
   Map<int, Map<String, dynamic>> readSpecificStaff(var value, String type) {
     String q;
     if (type == 'dept') {
@@ -62,7 +110,6 @@ class StaffCrudOperations {
       final filteredData = Map<int, Map<String, dynamic>>.fromEntries(
           staffData.entries.where((entry) {
         if (type == 'user') {
-          // Check if contact_emails is not null and contains the value
           return entry.value[q] != null &&
               entry.value[q].split(',').map((e) => e.trim()).contains(value);
         } else if (type == 'name') {
@@ -75,7 +122,6 @@ class StaffCrudOperations {
           return entry.value[q] == value;
         }
       }));
-
       // Convert filtered data to a list and sort based on the designation
       final sortedList = filteredData.entries.toList()
         ..sort((a, b) {

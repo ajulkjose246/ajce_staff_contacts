@@ -1,3 +1,5 @@
+import 'dart:isolate';
+
 import 'package:ajce_staff_contacts/components/user_listview.dart';
 import 'package:ajce_staff_contacts/screens/department_page.dart';
 import 'package:ajce_staff_contacts/hive/staff_crud_operations.dart';
@@ -8,6 +10,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:phone_state/phone_state.dart';
+import 'package:system_alert_window/system_alert_window.dart';
 
 class ContainerPage extends StatefulWidget {
   const ContainerPage({super.key});
@@ -24,7 +28,7 @@ class _ContainerPageState extends State<ContainerPage>
     HomePage(),
     DepartmentPage(),
     StaffGroups(),
-    UtilityPage(),
+    // UtilityPage(),
   ];
 
   void _onPageChanged(int index) {
@@ -43,6 +47,7 @@ class _ContainerPageState extends State<ContainerPage>
     _textEditingController.dispose();
     _focusNode.dispose();
     _con.dispose();
+    SystemAlertWindow.removeOnClickListener();
     super.dispose();
   }
 
@@ -60,6 +65,8 @@ class _ContainerPageState extends State<ContainerPage>
       vsync: this,
       duration: const Duration(milliseconds: 375),
     );
+    _requestPermissions();
+    _listenPhoneState();
     super.initState();
 
     _focusNode.addListener(() {
@@ -81,6 +88,57 @@ class _ContainerPageState extends State<ContainerPage>
         _focusNode.unfocus();
       }
     });
+  }
+
+  bool _isShowingWindow = false;
+  SystemWindowPrefMode prefMode = SystemWindowPrefMode.OVERLAY;
+  SendPort? homePort;
+  String? latestMessageFromOverlay;
+
+  void _listenPhoneState() {
+    PhoneState.stream.listen((event) {
+      switch (event.status) {
+        case PhoneStateStatus.CALL_INCOMING:
+        case PhoneStateStatus.CALL_STARTED:
+          _showOverlayWindow();
+          print("container page");
+          print(event.number);
+          print("container page");
+          break;
+        case PhoneStateStatus.CALL_ENDED:
+          _hideOverlayWindow();
+          break;
+        case PhoneStateStatus.NOTHING:
+          break;
+      }
+    });
+  }
+
+  Future<void> _requestPermissions() async {
+    await SystemAlertWindow.requestPermissions(prefMode: prefMode);
+  }
+
+  void _showOverlayWindow() async {
+    if (!_isShowingWindow) {
+      await SystemAlertWindow.sendMessageToOverlay('show system window');
+      SystemAlertWindow.showSystemWindow(
+          height: 200,
+          width: MediaQuery.of(context).size.width.floor(),
+          gravity: SystemWindowGravity.CENTER,
+          prefMode: prefMode);
+      setState(() {
+        _isShowingWindow = true;
+      });
+    }
+  }
+
+  void _hideOverlayWindow() async {
+    if (_isShowingWindow) {
+      setState(() {
+        _isShowingWindow = false;
+      });
+      await SystemAlertWindow.closeSystemWindow(prefMode: prefMode);
+    }
   }
 
   @override
@@ -281,10 +339,10 @@ class _ContainerPageState extends State<ContainerPage>
                   icon: Icons.group,
                   text: 'Teams',
                 ),
-                GButton(
-                  icon: Icons.engineering,
-                  text: 'Utilities',
-                ),
+                // GButton(
+                //   icon: Icons.engineering,
+                //   text: 'Utilities',
+                // ),
               ],
               selectedIndex: _selectedIndex,
               onTabChange: _onItemTapped,

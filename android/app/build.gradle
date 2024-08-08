@@ -40,6 +40,7 @@ android {
         applicationId = "ajce.staffcontacts"
         minSdkVersion 23 
         multiDexEnabled true
+        targetSdkVersion 34
         targetSdk = flutter.targetSdkVersion
         versionCode = flutterVersionCode.toInteger()
         versionName = flutterVersionName
