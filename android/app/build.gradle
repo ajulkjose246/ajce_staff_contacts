@@ -60,3 +60,8 @@ android {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // ... other dependencies ...
+    implementation 'com.github.judemanutd:autostarter:1.0.8'
+}

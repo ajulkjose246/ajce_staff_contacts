@@ -1,3 +1,8 @@
+// ignore_for_file: avoid_print
+
+import 'package:ajce_staff_contacts/hive/dept_crud_operations.dart';
+import 'package:ajce_staff_contacts/hive/staff_crud_operations.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:phone_state/phone_state.dart';
@@ -25,8 +30,16 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
     Color(0xFFD7D7D8),
     Color(0xFFAEB2B8),
   ];
+
   bool _isShowingWindow = false;
   SystemWindowPrefMode prefMode = SystemWindowPrefMode.OVERLAY;
+
+  String _incomingPhoneNumber = "Unknown"; // To store the phone number
+  String _staffName = "Unknown"; // To store the staff name
+  String _staffDepartment = "Unknown"; // To store the staff department
+  String _staffDesignation = "Unknown"; // To store the staff department
+  String _staffImage =
+      "https://api.multiavatar.com/x-slayer.png"; // To store the staff department
 
   @override
   void initState() {
@@ -36,18 +49,63 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
   }
 
   void _listenPhoneState() {
-    PhoneState.stream.listen((event) {
-      switch (event.status) {
-        case PhoneStateStatus.CALL_INCOMING:
-        case PhoneStateStatus.CALL_STARTED:
-          _showOverlayWindow(event.number ?? "Unknown");
-          print(event.number);
-          break;
-        case PhoneStateStatus.CALL_ENDED:
-          _hideOverlayWindow();
-          break;
-        case PhoneStateStatus.NOTHING:
-          break;
+    PhoneState.stream.listen((event) async {
+      try {
+        switch (event.status) {
+          case PhoneStateStatus.CALL_INCOMING:
+          case PhoneStateStatus.CALL_STARTED:
+            _incomingPhoneNumber = event.number ?? "Unknown";
+
+            if (_incomingPhoneNumber != "Unknown") {
+              String cleanedNumber =
+                  _incomingPhoneNumber.replaceAll(RegExp(r'\D'), '');
+
+              try {
+                final staffDetails = StaffCrudOperations()
+                    .readSpecificStaff(cleanedNumber, "number");
+
+                if (staffDetails.isNotEmpty) {
+                  final staff = staffDetails.values.first;
+                  final deptDetails = DeptCrudOperations()
+                      .getDepartmentByCode(staff['deptCode']);
+
+                  setState(() {
+                    _staffName = staff['staffName'] ?? "Unknown";
+                    _staffDepartment = deptDetails!['deptName'].toString();
+                    _staffImage = staff['photo'] ?? "Unknown";
+                    _staffDesignation = staff['designation'] ?? "Unknown";
+                  });
+
+                  if (_staffName != "Unknown") {
+                    _showOverlayWindow(_incomingPhoneNumber);
+                  } else {
+                    _hideOverlayWindow();
+                  }
+                } else {
+                  _hideOverlayWindow();
+                  print("No staff found with this number");
+                }
+              } catch (e) {
+                _hideOverlayWindow();
+                print("Error retrieving staff details: $e");
+              }
+            } else {
+              _hideOverlayWindow();
+            }
+
+            print("Incoming Phone Number: $_incomingPhoneNumber");
+            break;
+
+          case PhoneStateStatus.CALL_ENDED:
+            _hideOverlayWindow();
+            break;
+
+          case PhoneStateStatus.NOTHING:
+            break;
+        }
+      } catch (e) {
+        _hideOverlayWindow();
+        print("Error in _listenPhoneState: $e");
       }
     });
   }
@@ -79,6 +137,7 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
         _isShowingWindow = false;
       });
       await SystemAlertWindow.closeSystemWindow(prefMode: prefMode);
+      SystemAlertWindow.disposeOverlayListener();
     }
   }
 
@@ -116,28 +175,42 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
                   children: [
                     ListTile(
                       leading: Container(
-                        height: 80.0,
-                        width: 80.0,
+                        height: 60.0,
+                        width: 60.0,
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.black54),
                           shape: BoxShape.circle,
-                          image: const DecorationImage(
-                            image: NetworkImage(
-                                "https://api.multiavatar.com/x-slayer.png"),
-                          ),
+                        ),
+                        clipBehavior: Clip
+                            .hardEdge, // Ensures the image is clipped to the circular shape
+                        child: CachedNetworkImage(
+                          imageUrl: _staffImage,
+                          fit: BoxFit.cover,
+                          alignment: Alignment.topCenter,
+                          placeholder: (context, url) =>
+                              const Center(child: CircularProgressIndicator()),
+                          errorWidget: (context, url, error) =>
+                              const Icon(Icons.error),
                         ),
                       ),
-                      title: const Text(
-                        "X-SLAYER",
-                        style: TextStyle(
+                      title: Text(
+                        _staffName, // Display the staff name
+                        style: const TextStyle(
                             fontSize: 20.0, fontWeight: FontWeight.bold),
                       ),
-                      subtitle: const Text("Sousse , Tunisia"),
+                      subtitle: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(_staffDepartment),
+                          Text(_staffDesignation),
+                        ],
+                      ), // Display the department
                     ),
                     const Spacer(),
                     const Divider(color: Colors.black54),
                     Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 12.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 12.0),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -145,13 +218,13 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text("phoneNumber"),
-                                Text("Last call - 1 min ago"),
+                                Text(
+                                    _incomingPhoneNumber), // Display the phone number
                               ],
                             ),
                           ),
-                          Text(
-                            "Flutter Overlay",
+                          const Text(
+                            "Ajce Staff Contacts",
                             style: TextStyle(
                                 fontSize: 15.0, fontWeight: FontWeight.bold),
                           ),
@@ -165,7 +238,7 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
                   right: 0,
                   child: IconButton(
                     onPressed: () async {
-                      // await FlutterOverlayWindow.closeOverlay();
+                      _hideOverlayWindow(); // This will close the overlay window
                     },
                     icon: const Icon(
                       Icons.close,

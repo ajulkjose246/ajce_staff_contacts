@@ -4,8 +4,9 @@ class DeptCrudOperations {
   final _staffDataBox = Hive.box('deptDataBox');
 
   // CRUD Timestamp
-  void writeTimestamp(int timestamp) {
+  bool writeTimestamp(int timestamp) {
     _staffDataBox.put('timestamp', timestamp);
+    return timestamp == 0;
   }
 
   int readTimestamp() {

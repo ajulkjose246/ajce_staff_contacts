@@ -1,11 +1,19 @@
 import 'dart:isolate';
 
-import 'package:ajce_staff_contacts/components/user_listview.dart';
+import 'package:ajce_staff_contacts/apiData/get_dept.dart';
+import 'package:ajce_staff_contacts/apiData/get_staff.dart';
+import 'package:ajce_staff_contacts/apiData/get_staff_groups.dart';
+import 'package:ajce_staff_contacts/apiData/get_students.dart';
+import 'package:ajce_staff_contacts/components/staff_listview.dart';
+import 'package:ajce_staff_contacts/hive/dept_crud_operations.dart';
+import 'package:ajce_staff_contacts/hive/staff_group_crud_operations.dart';
+import 'package:ajce_staff_contacts/hive/user_data.dart';
 import 'package:ajce_staff_contacts/screens/department_page.dart';
 import 'package:ajce_staff_contacts/hive/staff_crud_operations.dart';
 import 'package:ajce_staff_contacts/screens/home_page.dart';
 import 'package:ajce_staff_contacts/screens/staff_groups.dart';
-import 'package:ajce_staff_contacts/screens/utility_page.dart';
+import 'package:ajce_staff_contacts/screens/students.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
@@ -28,7 +36,7 @@ class _ContainerPageState extends State<ContainerPage>
     HomePage(),
     DepartmentPage(),
     StaffGroups(),
-    // UtilityPage(),
+    UtilityPage(),
   ];
 
   void _onPageChanged(int index) {
@@ -56,6 +64,7 @@ class _ContainerPageState extends State<ContainerPage>
   late FocusNode _focusNode;
   int toggle = 0;
   String typedText = '';
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -141,8 +150,38 @@ class _ContainerPageState extends State<ContainerPage>
     }
   }
 
+  Future<void> _loadData() async {
+    bool staffTimestampSet = StaffCrudOperations().writeTimestamp(0);
+    bool staffGroupTimestampSet = StaffGroupCrudOperations().writeTimestamp(0);
+    bool deptTimestampSet = DeptCrudOperations().writeTimestamp(0);
+
+    if (staffTimestampSet && staffGroupTimestampSet && deptTimestampSet) {
+      try {
+        await Future.wait([
+          GetDept().getDepartmentsAPI(),
+          GetStaff().getStaffContactsAPI(),
+          GetStaffGroups().getStaffGroupsAPI(),
+          GetStudents().getStudentsAPI(),
+        ]);
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    Map<String, dynamic> userData = UserData().readUserData();
+
     Size size = MediaQuery.of(context).size;
     return Scaffold(
       backgroundColor: Colors.white,
@@ -155,154 +194,231 @@ class _ContainerPageState extends State<ContainerPage>
           style: TextStyle(fontWeight: FontWeight.w900, color: Colors.white),
         ),
         actions: [
-          IconButton(
-              onPressed: () async {
-                await FirebaseAuth.instance.signOut();
-                await GoogleSignIn().signOut();
-              },
-              icon: const Icon(
-                Icons.exit_to_app,
-                color: Colors.white,
-              ))
-        ],
-      ),
-      body: Stack(
-        children: [
-          PageView(
-            controller: _pageController,
-            onPageChanged: _onPageChanged,
-            children: _widgetOptions,
-          ),
-          if (_focusNode.hasFocus)
-            typedText.isEmpty
-                ? Container()
-                : Positioned(
-                    right: 70.0,
-                    bottom: 70.0,
-                    child: Container(
-                      width: MediaQuery.of(context).size.width - 80,
-                      height: StaffCrudOperations()
-                                  .readSpecificStaff(typedText, "name")
-                                  .length >
-                              4
-                          ? 260
-                          : (StaffCrudOperations()
-                                  .readSpecificStaff(typedText, "name")
-                                  .length *
-                              65),
-                      padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20.0),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black26,
-                            blurRadius: 5.0,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: ListView.builder(
-                        itemCount: StaffCrudOperations()
-                            .readSpecificStaff(typedText, "name")
-                            .length,
-                        itemBuilder: (context, index) {
-                          var staffData = StaffCrudOperations()
-                              .readSpecificStaff(typedText, "name")
-                              .values
-                              .toList()[index];
-                          return UserListview(
-                            staffCode: staffData['staffCode'],
-                          );
-                        },
-                      ),
+          Stack(
+            children: [
+              PopupMenuButton<int>(
+                onSelected: (value) async {
+                  if (value == 0) {
+                    _loadData();
+                  } else if (value == 1) {
+                    try {
+                      bool staffTimestampSet =
+                          StaffCrudOperations().writeTimestamp(0);
+                      bool staffGroupTimestampSet =
+                          StaffGroupCrudOperations().writeTimestamp(0);
+                      bool deptTimestampSet =
+                          DeptCrudOperations().writeTimestamp(0);
+
+                      if (staffTimestampSet &&
+                          staffGroupTimestampSet &&
+                          deptTimestampSet) {
+                        await FirebaseAuth.instance.signOut();
+                        await GoogleSignIn().signOut();
+                      }
+                    } catch (e) {
+                      print('Sign out error: $e');
+                    }
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem<int>(
+                    value: 0,
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.sync,
+                          size: 20,
+                        ),
+                        SizedBox(
+                          width: 10,
+                        ),
+                        Text('Resync'),
+                      ],
                     ),
                   ),
-          // Search bar
-          toggle == 1
-              ? AnimatedPositioned(
-                  duration: const Duration(milliseconds: 375),
-                  right:
-                      (toggle == 0) ? 10.0 : 70.0, // Adjust the right position
-                  bottom: 10.0,
-                  curve: Curves.easeOut,
-                  child: AnimatedOpacity(
-                    opacity: (toggle == 0) ? 0.0 : 1.0,
-                    duration: const Duration(milliseconds: 200),
-                    child: Container(
-                      height: 50.0, // Adjusted height for better usability
-                      width: size.width -
-                          80, // Adjusted width for better usability
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16.0), // Padding inside the search bar
-                      decoration: BoxDecoration(
-                        color: const Color.fromRGBO(137, 14, 79,
-                            1), // Background color for the search bar
-                        borderRadius: BorderRadius.circular(20.0),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black26,
-                            blurRadius: 5.0,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: TextField(
-                        controller: _textEditingController,
-                        focusNode: _focusNode,
-                        cursorRadius: const Radius.circular(10.0),
-                        cursorWidth: 2.0,
-                        cursorColor: Colors.white,
-                        style: const TextStyle(color: Colors.white),
-                        onChanged: (value) {
-                          setState(() {
-                            typedText = value;
-                          });
-                        },
-                        decoration: InputDecoration(
-                          floatingLabelBehavior: FloatingLabelBehavior.never,
-                          labelText: 'Search...',
-                          labelStyle: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 17.0,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          prefixIcon: const Icon(
-                            Icons.person,
-                            color: Colors.white,
-                          ),
-                          alignLabelWithHint: true,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20.0),
-                            borderSide: BorderSide.none,
+                  const PopupMenuItem<int>(
+                    value: 1,
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.exit_to_app,
+                          size: 20,
+                        ),
+                        SizedBox(
+                          width: 10,
+                        ),
+                        Text('Log Out'),
+                      ],
+                    ),
+                  ),
+                ],
+                offset: Offset(0, 40),
+                child: SizedBox(
+                  width: 40,
+                  height: 40,
+                  child: ClipOval(
+                    child: CachedNetworkImage(
+                      imageUrl: userData['photo'] ?? "",
+                      fit: BoxFit.cover,
+                      alignment: Alignment.topCenter,
+                      placeholder: (context, url) =>
+                          const Center(child: CircularProgressIndicator()),
+                      errorWidget: (context, url, error) =>
+                          const Icon(Icons.error),
+                    ),
+                  ),
+                ), // Adjust this offset as needed
+              ),
+            ],
+          ),
+          SizedBox(
+            width: 10,
+          )
+        ],
+      ),
+      body: !_isLoading
+          ? Stack(
+              children: [
+                PageView(
+                  controller: _pageController,
+                  onPageChanged: _onPageChanged,
+                  children: _widgetOptions,
+                ),
+                if (_focusNode.hasFocus)
+                  typedText.isEmpty
+                      ? Container()
+                      : Positioned(
+                          right: 70.0,
+                          bottom: 70.0,
+                          child: Container(
+                            width: MediaQuery.of(context).size.width - 80,
+                            height: StaffCrudOperations()
+                                        .readSpecificStaff(typedText, "name")
+                                        .length >
+                                    4
+                                ? 260
+                                : (StaffCrudOperations()
+                                        .readSpecificStaff(typedText, "name")
+                                        .length *
+                                    65),
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20.0),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.black26,
+                                  blurRadius: 5.0,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: ListView.builder(
+                              itemCount: StaffCrudOperations()
+                                  .readSpecificStaff(typedText, "name")
+                                  .length,
+                              itemBuilder: (context, index) {
+                                var staffData = StaffCrudOperations()
+                                    .readSpecificStaff(typedText, "name")
+                                    .values
+                                    .toList()[index];
+                                return StaffListview(
+                                  staffCode: staffData['staffCode'],
+                                );
+                              },
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                  ),
-                )
-              : Container(),
-          // Search/Close icon button
-          _selectedIndex != 3
-              ? Positioned(
-                  bottom: 10.0,
-                  right: 10.0,
-                  child: Material(
-                    color: const Color.fromRGBO(137, 14, 79, 1),
-                    borderRadius: BorderRadius.circular(30.0),
-                    child: IconButton(
-                      splashRadius: 19.0,
-                      icon: Icon(
-                        toggle == 0 ? Icons.search : Icons.close,
-                        color: Colors.white,
-                      ),
-                      onPressed: _toggleSearch,
-                    ),
-                  ),
-                )
-              : Container(),
-        ],
-      ),
+                // Search bar
+                toggle == 1
+                    ? AnimatedPositioned(
+                        duration: const Duration(milliseconds: 375),
+                        right: (toggle == 0)
+                            ? 10.0
+                            : 70.0, // Adjust the right position
+                        bottom: 10.0,
+                        curve: Curves.easeOut,
+                        child: AnimatedOpacity(
+                          opacity: (toggle == 0) ? 0.0 : 1.0,
+                          duration: const Duration(milliseconds: 200),
+                          child: Container(
+                            height:
+                                50.0, // Adjusted height for better usability
+                            width: size.width -
+                                80, // Adjusted width for better usability
+                            padding: const EdgeInsets.symmetric(
+                                horizontal:
+                                    16.0), // Padding inside the search bar
+                            decoration: BoxDecoration(
+                              color: const Color.fromRGBO(137, 14, 79,
+                                  1), // Background color for the search bar
+                              borderRadius: BorderRadius.circular(20.0),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.black26,
+                                  blurRadius: 5.0,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: TextField(
+                              controller: _textEditingController,
+                              focusNode: _focusNode,
+                              cursorRadius: const Radius.circular(10.0),
+                              cursorWidth: 2.0,
+                              cursorColor: Colors.white,
+                              style: const TextStyle(color: Colors.white),
+                              onChanged: (value) {
+                                setState(() {
+                                  typedText = value;
+                                });
+                              },
+                              decoration: InputDecoration(
+                                floatingLabelBehavior:
+                                    FloatingLabelBehavior.never,
+                                labelText: 'Search...',
+                                labelStyle: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 17.0,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                prefixIcon: const Icon(
+                                  Icons.person,
+                                  color: Colors.white,
+                                ),
+                                alignLabelWithHint: true,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(20.0),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
+                    : Container(),
+                // Search/Close icon button
+                _selectedIndex != 3
+                    ? Positioned(
+                        bottom: 10.0,
+                        right: 10.0,
+                        child: Material(
+                          color: const Color.fromRGBO(137, 14, 79, 1),
+                          borderRadius: BorderRadius.circular(30.0),
+                          child: IconButton(
+                            splashRadius: 19.0,
+                            icon: Icon(
+                              toggle == 0 ? Icons.search : Icons.close,
+                              color: Colors.white,
+                            ),
+                            onPressed: _toggleSearch,
+                          ),
+                        ),
+                      )
+                    : Container(),
+              ],
+            )
+          : CircularProgressIndicator(),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -339,10 +455,10 @@ class _ContainerPageState extends State<ContainerPage>
                   icon: Icons.group,
                   text: 'Teams',
                 ),
-                // GButton(
-                //   icon: Icons.engineering,
-                //   text: 'Utilities',
-                // ),
+                GButton(
+                  icon: Icons.group,
+                  text: 'Students',
+                ),
               ],
               selectedIndex: _selectedIndex,
               onTabChange: _onItemTapped,

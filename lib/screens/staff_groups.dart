@@ -14,6 +14,8 @@ class _StaffGroupsState extends State<StaffGroups> {
   var filterValue = 1;
   @override
   Widget build(BuildContext context) {
+    Size size = MediaQuery.of(context).size;
+
     // var staffData = StaffCrudOperations()
     //     .readSpecificStaff(widget.staffCode, 'staff')
     //     .values
@@ -39,16 +41,16 @@ class _StaffGroupsState extends State<StaffGroups> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(5),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // Filter buttons
-                  _buildFilterButton(1, "College"),
+                  _buildFilterButton(1, "College", size),
                   const SizedBox(width: 10),
-                  _buildFilterButton(3, "Departments"),
+                  _buildFilterButton(3, "Departments", size),
                   const SizedBox(width: 10),
-                  _buildFilterButton(2, "Events"),
+                  _buildFilterButton(2, "Events", size),
                 ],
               ),
             ),
@@ -116,7 +118,11 @@ class _StaffGroupsState extends State<StaffGroups> {
     );
   }
 
-  Widget _buildFilterButton(int value, String label) {
+  Widget _buildFilterButton(int value, String label, Size size) {
+    // Calculate responsive width and height
+    double buttonWidth = size.width * 0.27;
+    double buttonHeight = 35;
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -124,21 +130,24 @@ class _StaffGroupsState extends State<StaffGroups> {
         });
       },
       child: Container(
-        width: 100,
-        height: 50,
+        width: buttonWidth,
+        height: buttonHeight,
         decoration: BoxDecoration(
-          color: filterValue != value
-              ? Colors.white
-              : const Color.fromRGBO(137, 14, 79, 1),
+          color: filterValue == value
+              ? const Color.fromRGBO(137, 14, 79, 1)
+              : Colors.white,
           borderRadius: BorderRadius.circular(50),
         ),
         child: Center(
-            child: Text(
-          label,
-          style: TextStyle(
+          child: Text(
+            label,
+            style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: filterValue != value ? Colors.black : Colors.white),
-        )),
+              color: filterValue == value ? Colors.white : Colors.black,
+              fontSize: size.width * 0.03, // Responsive font size
+            ),
+          ),
+        ),
       ),
     );
   }

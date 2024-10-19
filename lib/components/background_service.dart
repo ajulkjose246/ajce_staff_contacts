@@ -1,5 +1,8 @@
+// ignore_for_file: avoid_print
+
 import 'dart:async';
 import 'dart:ui';
+import 'package:ajce_staff_contacts/hive/staff_crud_operations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:system_alert_window/system_alert_window.dart';
@@ -38,17 +41,50 @@ void onServiceStart(ServiceInstance service) async {
 
   SystemAlertWindow.requestPermissions(prefMode: SystemWindowPrefMode.OVERLAY);
 
-  PhoneState.stream.listen((event) {
-    switch (event.status) {
-      case PhoneStateStatus.CALL_INCOMING:
-      case PhoneStateStatus.CALL_STARTED:
-        showOverlayWindow();
-        break;
-      case PhoneStateStatus.CALL_ENDED:
-        hideOverlayWindow();
-        break;
-      case PhoneStateStatus.NOTHING:
-        break;
+  PhoneState.stream.listen((event) async {
+    String incomingPhoneNumber = "Unknown"; // To store the phone number
+
+    try {
+      switch (event.status) {
+        case PhoneStateStatus.CALL_INCOMING:
+        case PhoneStateStatus.CALL_STARTED:
+          incomingPhoneNumber = event.number ?? "Unknown";
+
+          if (incomingPhoneNumber != "Unknown") {
+            String cleanedNumber =
+                incomingPhoneNumber.replaceAll(RegExp(r'\D'), '');
+
+            try {
+              final staffDetails = StaffCrudOperations()
+                  .readSpecificStaff(cleanedNumber, "number");
+
+              if (staffDetails.isNotEmpty) {
+                final staff = staffDetails.values.first;
+                if (staff['staffName'] != null) {
+                  showOverlayWindow();
+                } else {
+                  hideOverlayWindow();
+                }
+              } else {
+                hideOverlayWindow();
+                print("No staff found with this number");
+              }
+            } catch (e) {
+              print("Error retrieving staff details: $e");
+            }
+          }
+
+          print("Incoming Phone Number: $incomingPhoneNumber");
+          break;
+        case PhoneStateStatus.CALL_ENDED:
+          hideOverlayWindow();
+          break;
+        case PhoneStateStatus.NOTHING:
+          break;
+      }
+    } catch (e) {
+      hideOverlayWindow();
+      print("Error in _listenPhoneState: $e");
     }
   });
 }

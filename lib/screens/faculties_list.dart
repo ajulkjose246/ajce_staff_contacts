@@ -1,6 +1,6 @@
 // ignore_for_file: prefer_typing_uninitialized_variables
 
-import 'package:ajce_staff_contacts/components/user_listview.dart';
+import 'package:ajce_staff_contacts/components/staff_listview.dart';
 import 'package:ajce_staff_contacts/hive/staff_crud_operations.dart';
 import 'package:flutter/material.dart';
 
@@ -58,10 +58,10 @@ class _FacultiesListState extends State<FacultiesList> {
             itemCount: widget.isGroup ? staffCode.length : staffData.length,
             itemBuilder: (context, index) {
               return widget.isGroup
-                  ? UserListview(
+                  ? StaffListview(
                       staffCode: int.parse(staffCode[index]),
                     )
-                  : UserListview(
+                  : StaffListview(
                       staffCode: staffData[index]['staffCode'],
                     );
             },

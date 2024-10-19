@@ -1,6 +1,6 @@
 import 'package:ajce_staff_contacts/provider/favorites_provider.dart';
-import 'package:ajce_staff_contacts/components/profile_view_modal.dart';
-import 'package:ajce_staff_contacts/components/user_listview.dart';
+import 'package:ajce_staff_contacts/components/staff_profile_view_modal.dart';
+import 'package:ajce_staff_contacts/components/staff_listview.dart';
 import 'package:ajce_staff_contacts/hive/dept_crud_operations.dart';
 import 'package:ajce_staff_contacts/hive/staff_crud_operations.dart';
 import 'package:ajce_staff_contacts/hive/user_data.dart';
@@ -556,7 +556,7 @@ class _HomePageState extends State<HomePage> {
                       .toList();
                   return GestureDetector(
                     onTap: () {
-                      ProfileView(context, staffData);
+                      StaffProfileView(context, staffData);
                     },
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 5),
@@ -606,7 +606,7 @@ class _HomePageState extends State<HomePage> {
                   .readSpecificStaff(userDept?['deptCode'], 'dept')
                   .values
                   .toList()[index];
-              return UserListview(
+              return StaffListview(
                 staffCode: staffData['staffCode'],
               );
             },

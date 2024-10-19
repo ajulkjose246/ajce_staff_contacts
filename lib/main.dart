@@ -2,13 +2,13 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 import 'package:ajce_staff_contacts/components/custom_overlay.dart';
-import 'package:device_info_plus/device_info_plus.dart';
+import 'package:ajce_staff_contacts/components/request_permissions.dart';
+import 'package:ajce_staff_contacts/hive/staff_crud_operations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:phone_state/phone_state.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -27,7 +27,9 @@ Future<void> main() async {
   await Hive.openBox('deptDataBox');
   await Hive.openBox('userDataBox');
   await Hive.openBox('favoriteStaff');
+  await Hive.openBox('studentsDataBox');
   await initializeService();
+  requestPermissions();
 
   runApp(
     MultiProvider(
@@ -40,32 +42,25 @@ Future<void> main() async {
 }
 
 @pragma("vm:entry-point")
-void overlayMain() {
+Future<void> overlayMain() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
+  await Hive.openBox('staffDataBox');
+  await Hive.openBox('staffGroupDataBox');
+  await Hive.openBox('deptDataBox');
+  await Hive.openBox('userDataBox');
+  await Hive.openBox('favoriteStaff');
+  await Hive.openBox('studentsDataBox');
+
   runApp(
-    const MaterialApp(
+    MaterialApp(
       debugShowCheckedModeBanner: false,
       home: TrueCallerOverlay(),
     ),
   );
 }
 
-Future<void> requestPermissions() async {
-  var status = await Permission.location.status;
-  await Permission.phone.request();
-  await Permission.systemAlertWindow.request();
-  // await Permission.ignoreBatteryOptimizations.request();
-  if (!status.isGranted) {
-    await Permission.location.request();
-  }
-  var statusL = await Permission.phone.status;
-  if (!statusL.isGranted) {
-    await Permission.phone.request();
-  }
-}
-
 Future<void> initializeService() async {
-  requestPermissions();
   final service = FlutterBackgroundService();
 
   const AndroidNotificationChannel channel = AndroidNotificationChannel(
@@ -112,27 +107,59 @@ Future<void> initializeService() async {
   Timer.periodic(const Duration(seconds: 1), (timer) async {
     DartPluginRegistrant.ensureInitialized();
 
-    PhoneState.stream.listen((event) {
-      final double screenWidth = WidgetsBinding
-              .instance.platformDispatcher.views.first.physicalSize.width /
-          WidgetsBinding
-              .instance.platformDispatcher.views.first.devicePixelRatio;
-      SystemWindowPrefMode prefMode = SystemWindowPrefMode.OVERLAY;
-      switch (event.status) {
-        case PhoneStateStatus.CALL_INCOMING:
-        case PhoneStateStatus.CALL_STARTED:
-          SystemAlertWindow.showSystemWindow(
-            height: 200,
-            width: screenWidth.floor(),
-            gravity: SystemWindowGravity.CENTER,
-            prefMode: prefMode,
-          );
-          break;
-        case PhoneStateStatus.CALL_ENDED:
-          SystemAlertWindow.closeSystemWindow();
-          break;
-        case PhoneStateStatus.NOTHING:
-          break;
+    PhoneState.stream.listen((event) async {
+      String incomingPhoneNumber = "Unknown"; // To store the phone number
+
+      try {
+        switch (event.status) {
+          case PhoneStateStatus.CALL_INCOMING:
+          case PhoneStateStatus.CALL_STARTED:
+            incomingPhoneNumber = event.number ?? "Unknown";
+
+            if (incomingPhoneNumber != "Unknown") {
+              String cleanedNumber =
+                  incomingPhoneNumber.replaceAll(RegExp(r'\D'), '');
+
+              try {
+                final staffDetails = StaffCrudOperations()
+                    .readSpecificStaff(cleanedNumber, "number");
+
+                if (staffDetails.isNotEmpty) {
+                  final staff = staffDetails.values.first;
+                  if (staff['staffName'] != null) {
+                    await SystemAlertWindow.showSystemWindow(
+                      height: 200,
+                      width: 200,
+                      gravity: SystemWindowGravity.CENTER,
+                      prefMode: SystemWindowPrefMode.OVERLAY,
+                    );
+                  } else {
+                    await SystemAlertWindow.closeSystemWindow(
+                        prefMode: SystemWindowPrefMode.OVERLAY);
+                  }
+                } else {
+                  await SystemAlertWindow.closeSystemWindow(
+                      prefMode: SystemWindowPrefMode.OVERLAY);
+                  print("No staff found with this number");
+                }
+              } catch (e) {
+                print("Error retrieving staff details: $e");
+              }
+            }
+
+            print("Incoming Phone Number: $incomingPhoneNumber");
+            break;
+          case PhoneStateStatus.CALL_ENDED:
+            await SystemAlertWindow.closeSystemWindow(
+                prefMode: SystemWindowPrefMode.OVERLAY);
+            break;
+          case PhoneStateStatus.NOTHING:
+            break;
+        }
+      } catch (e) {
+        await SystemAlertWindow.closeSystemWindow(
+            prefMode: SystemWindowPrefMode.OVERLAY);
+        print("Error in _listenPhoneState: $e");
       }
     });
   });
@@ -179,7 +206,7 @@ void onStart(ServiceInstance service) async {
   service.on('showOverlay').listen((event) {
     WidgetsFlutterBinding.ensureInitialized();
     runApp(
-      const MaterialApp(
+      MaterialApp(
         home: TrueCallerOverlay(),
       ),
     );
@@ -233,23 +260,23 @@ void onStart(ServiceInstance service) async {
       }
     });
 
-    final deviceInfo = DeviceInfoPlugin();
-    String? device;
-    if (Platform.isAndroid) {
-      final androidInfo = await deviceInfo.androidInfo;
-      device = androidInfo.model;
-    } else if (Platform.isIOS) {
-      final iosInfo = await deviceInfo.iosInfo;
-      device = iosInfo.model;
-    }
+    // final deviceInfo = DeviceInfoPlugin();
+    // String? device;
+    // if (Platform.isAndroid) {
+    //   final androidInfo = await deviceInfo.androidInfo;
+    //   device = androidInfo.model;
+    // } else if (Platform.isIOS) {
+    //   final iosInfo = await deviceInfo.iosInfo;
+    //   device = iosInfo.model;
+    // }
 
-    service.invoke(
-      'update',
-      {
-        "current_date": DateTime.now().toIso8601String(),
-        "device": device,
-      },
-    );
+    // service.invoke(
+    //   'update',
+    //   {
+    //     "current_date": DateTime.now().toIso8601String(),
+    //     "device": device,
+    //   },
+    // );
   });
 }
 

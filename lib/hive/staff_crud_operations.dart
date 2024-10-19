@@ -4,8 +4,9 @@ class StaffCrudOperations {
   final _staffDataBox = Hive.box('staffDataBox');
 
   // CRUD Timestamp
-  void writeTimestamp(int timestamp) {
+  bool writeTimestamp(int timestamp) {
     _staffDataBox.put('timestamp', timestamp);
+    return timestamp == 0;
   }
 
   int readTimestamp() {
@@ -97,6 +98,8 @@ class StaffCrudOperations {
       q = 'contact_emails';
     } else if (type == 'name') {
       q = 'staffName';
+    } else if (type == 'number') {
+      q = 'contact_mobiles';
     } else {
       q = 'staffCode';
     }
@@ -112,7 +115,7 @@ class StaffCrudOperations {
         if (type == 'user') {
           return entry.value[q] != null &&
               entry.value[q].split(',').map((e) => e.trim()).contains(value);
-        } else if (type == 'name') {
+        } else if (type == 'name' || type == 'number') {
           return entry.value[q] != null &&
               entry.value[q]
                   .toString()
@@ -122,6 +125,7 @@ class StaffCrudOperations {
           return entry.value[q] == value;
         }
       }));
+
       // Convert filtered data to a list and sort based on the designation
       final sortedList = filteredData.entries.toList()
         ..sort((a, b) {

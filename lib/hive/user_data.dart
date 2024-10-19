@@ -9,6 +9,10 @@ class UserData {
   }
 
   Map<String, dynamic> readUserData() {
-    return _userDataBox.get('data') ?? {"deptCode": 25};
+    final data = _userDataBox.get('data');
+    if (data != null && data is Map) {
+      return data.map((key, value) => MapEntry(key.toString(), value));
+    }
+    return {"deptCode": 25};
   }
 }
