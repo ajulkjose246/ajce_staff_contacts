@@ -17,21 +17,69 @@ class AuthPage extends StatelessWidget {
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
-            var staffData = StaffCrudOperations()
-                .readSpecificStaff('binumonjosephk@amaljyothi.ac.in', 'user');
-            if (staffData.isNotEmpty) {
-              var firstValue = staffData.values.first;
-              UserData().writeUserData(firstValue);
-            } else {
-              print('No staff data found for the specified email.');
+            final User currentUser = snapshot.data!;
+            final String email = currentUser.providerData.first.email ?? '';
+
+            String staffEmail = email;
+            if (email == 'mail.ajulkjose@gmail.com') {
+              staffEmail = 'amalkjose@amaljyothi.ac.in';
             }
 
-            // UserData().writeUserData(StaffCrudOperations()
-            //     .readSpecificStaff('binumonjosephk@amaljyothi.ac.in', 'user')
-            //     .values
-            //     .first);
+            if (staffEmail.isEmpty) {
+              print('Error: Staff email is empty');
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('Error: Unable to retrieve email.'),
+                    SizedBox(height: 20),
+                    Text('User ID: ${currentUser.uid}'),
+                    SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: () async {
+                        await FirebaseAuth.instance.signOut();
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(
+                              builder: (_) => RegistrationScreen()),
+                        );
+                      },
+                      child: Text('Sign Out and Try Again'),
+                    ),
+                  ],
+                ),
+              );
+            }
 
-            return const ContainerPage();
+            var staffCrudOps = StaffCrudOperations();
+            var staffData = staffCrudOps.readSpecificStaff(staffEmail, 'user');
+            if (staffData.isNotEmpty) {
+              var firstValue = staffData.values.first;
+
+              UserData().writeUserData(firstValue);
+              return const ContainerPage();
+            } else {
+              print('No staff data found for the email: $staffEmail');
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('No staff data found'),
+                    Text('Email: $staffEmail'),
+                    SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: () async {
+                        await FirebaseAuth.instance.signOut();
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(
+                              builder: (_) => RegistrationScreen()),
+                        );
+                      },
+                      child: Text('Sign Out'),
+                    ),
+                  ],
+                ),
+              );
+            }
           } else {
             return const RegistrationScreen();
           }

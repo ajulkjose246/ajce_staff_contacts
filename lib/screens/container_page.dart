@@ -11,6 +11,7 @@ import 'package:ajce_staff_contacts/hive/user_data.dart';
 import 'package:ajce_staff_contacts/screens/department_page.dart';
 import 'package:ajce_staff_contacts/hive/staff_crud_operations.dart';
 import 'package:ajce_staff_contacts/screens/home_page.dart';
+import 'package:ajce_staff_contacts/screens/settings_page.dart';
 import 'package:ajce_staff_contacts/screens/staff_groups.dart';
 import 'package:ajce_staff_contacts/screens/students.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -218,6 +219,11 @@ class _ContainerPageState extends State<ContainerPage>
                     } catch (e) {
                       print('Sign out error: $e');
                     }
+                  } else if (value == 2) {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => SettingsPage()));
                   }
                 },
                 itemBuilder: (context) => [
@@ -248,6 +254,21 @@ class _ContainerPageState extends State<ContainerPage>
                           width: 10,
                         ),
                         Text('Log Out'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem<int>(
+                    value: 2,
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.settings,
+                          size: 20,
+                        ),
+                        SizedBox(
+                          width: 10,
+                        ),
+                        Text('Settings'),
                       ],
                     ),
                   ),
@@ -456,7 +477,7 @@ class _ContainerPageState extends State<ContainerPage>
                   text: 'Teams',
                 ),
                 GButton(
-                  icon: Icons.group,
+                  icon: Icons.groups,
                   text: 'Students',
                 ),
               ],

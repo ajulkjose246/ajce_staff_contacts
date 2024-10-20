@@ -61,7 +61,6 @@ dependencies:
   flutter_local_notifications: ^17.2.1+2
   flutter_phone_direct_caller: ^2.1.1
   ai_barcode_scanner: ^5.1.1+2
-  flutter_launcher_icons: ^0.14.1
 
 dev_dependencies:
   flutter_test:
@@ -74,11 +73,6 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^3.0.0
   build_runner: ^2.4.11
-
-flutter_launcher_icons:
-  android: true  # Generate icons for Android
-  ios: true     # Generate icons for iOS
-  image_path: "assets/img/logo.png" 
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

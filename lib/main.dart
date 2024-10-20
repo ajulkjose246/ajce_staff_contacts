@@ -17,6 +17,7 @@ import 'firebase_options.dart';
 import 'provider/favorites_provider.dart';
 import 'authentication/auth_page.dart';
 import 'screens/container_page.dart';
+import 'package:flutter_background_service_android/flutter_background_service_android.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -103,91 +104,14 @@ Future<void> initializeService() async {
       onBackground: onIosBackground,
     ),
   );
+
   service.startService();
-  Timer.periodic(const Duration(seconds: 1), (timer) async {
-    DartPluginRegistrant.ensureInitialized();
-
-    PhoneState.stream.listen((event) async {
-      String incomingPhoneNumber = "Unknown"; // To store the phone number
-
-      try {
-        switch (event.status) {
-          case PhoneStateStatus.CALL_INCOMING:
-          case PhoneStateStatus.CALL_STARTED:
-            incomingPhoneNumber = event.number ?? "Unknown";
-
-            if (incomingPhoneNumber != "Unknown") {
-              String cleanedNumber =
-                  incomingPhoneNumber.replaceAll(RegExp(r'\D'), '');
-
-              try {
-                final staffDetails = StaffCrudOperations()
-                    .readSpecificStaff(cleanedNumber, "number");
-
-                if (staffDetails.isNotEmpty) {
-                  final staff = staffDetails.values.first;
-                  if (staff['staffName'] != null) {
-                    await SystemAlertWindow.showSystemWindow(
-                      height: 200,
-                      width: 200,
-                      gravity: SystemWindowGravity.CENTER,
-                      prefMode: SystemWindowPrefMode.OVERLAY,
-                    );
-                  } else {
-                    await SystemAlertWindow.closeSystemWindow(
-                        prefMode: SystemWindowPrefMode.OVERLAY);
-                  }
-                } else {
-                  await SystemAlertWindow.closeSystemWindow(
-                      prefMode: SystemWindowPrefMode.OVERLAY);
-                  print("No staff found with this number");
-                }
-              } catch (e) {
-                print("Error retrieving staff details: $e");
-              }
-            }
-
-            print("Incoming Phone Number: $incomingPhoneNumber");
-            break;
-          case PhoneStateStatus.CALL_ENDED:
-            await SystemAlertWindow.closeSystemWindow(
-                prefMode: SystemWindowPrefMode.OVERLAY);
-            break;
-          case PhoneStateStatus.NOTHING:
-            break;
-        }
-      } catch (e) {
-        await SystemAlertWindow.closeSystemWindow(
-            prefMode: SystemWindowPrefMode.OVERLAY);
-        print("Error in _listenPhoneState: $e");
-      }
-    });
-  });
-}
-
-@pragma('vm:entry-point')
-Future<bool> onIosBackground(ServiceInstance service) async {
-  WidgetsFlutterBinding.ensureInitialized();
-  DartPluginRegistrant.ensureInitialized();
-  SharedPreferences preferences = await SharedPreferences.getInstance();
-  await preferences.reload();
-  final log = preferences.getStringList('log') ?? <String>[];
-  log.add(DateTime.now().toIso8601String());
-  await preferences.setStringList('log', log);
-  return true;
 }
 
 @pragma('vm:entry-point')
 void onStart(ServiceInstance service) async {
-  await Future.delayed(Duration(seconds: 2));
   DartPluginRegistrant.ensureInitialized();
-  // await SystemAlertWindow.requestPermissions(
-  //     prefMode: SystemWindowPrefMode.OVERLAY);
-
-  SharedPreferences preferences = await SharedPreferences.getInstance();
-  await preferences.setString("hello", "world");
-  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
+  SharedPreferences prefs = await SharedPreferences.getInstance();
 
   if (service is AndroidServiceInstance) {
     service.on('setAsForeground').listen((event) {
@@ -212,72 +136,73 @@ void onStart(ServiceInstance service) async {
     );
   });
 
-  Timer.periodic(const Duration(seconds: 1), (timer) async {
-    if (service is AndroidServiceInstance) {
-      if (await service.isForegroundService()) {
-        flutterLocalNotificationsPlugin.show(
-          888,
-          'COOL SERVICE',
-          'Awesome ${DateTime.now()}',
-          const NotificationDetails(
-            android: AndroidNotificationDetails(
-              'my_foreground',
-              'MY FOREGROUND SERVICE',
-              icon: 'ic_bg_service_small',
-              ongoing: true,
-            ),
-          ),
-        );
+  PhoneState.stream.listen((event) async {
+    String incomingPhoneNumber = "Unknown";
+    bool showCallerId = prefs.getBool('showCallerId') ?? false;
 
-        service.setForegroundNotificationInfo(
-          title: "My App Service",
-          content: "Updated at ${DateTime.now()}",
-        );
-      }
+    if (!showCallerId) {
+      return; // Exit early if showCallerId is false
     }
 
-    PhoneState.stream.listen((event) {
-      final double screenWidth = WidgetsBinding
-              .instance.platformDispatcher.views.first.physicalSize.width /
-          WidgetsBinding
-              .instance.platformDispatcher.views.first.devicePixelRatio;
-      SystemWindowPrefMode prefMode = SystemWindowPrefMode.OVERLAY;
+    try {
       switch (event.status) {
         case PhoneStateStatus.CALL_INCOMING:
         case PhoneStateStatus.CALL_STARTED:
-          SystemAlertWindow.showSystemWindow(
-            height: 200,
-            width: screenWidth.floor(),
-            gravity: SystemWindowGravity.CENTER,
-            prefMode: prefMode,
-          );
+          incomingPhoneNumber = event.number ?? "Unknown";
+
+          if (incomingPhoneNumber != "Unknown") {
+            String cleanedNumber =
+                incomingPhoneNumber.replaceAll(RegExp(r'\D'), '');
+
+            try {
+              final staffDetails = StaffCrudOperations()
+                  .readSpecificStaff(cleanedNumber, "number");
+
+              if (staffDetails.isNotEmpty) {
+                final staff = staffDetails.values.first;
+                if (staff['staffName'] != null) {
+                  await SystemAlertWindow.showSystemWindow(
+                    height: 200,
+                    width: 200,
+                    gravity: SystemWindowGravity.CENTER,
+                    prefMode: SystemWindowPrefMode.OVERLAY,
+                  );
+                }
+              } else {
+                print("No staff found with this number");
+              }
+            } catch (e) {
+              print("Error retrieving staff details: $e");
+            }
+          }
+
+          print("Incoming Phone Number: $incomingPhoneNumber");
           break;
         case PhoneStateStatus.CALL_ENDED:
-          SystemAlertWindow.closeSystemWindow();
+          await SystemAlertWindow.closeSystemWindow(
+              prefMode: SystemWindowPrefMode.OVERLAY);
           break;
         case PhoneStateStatus.NOTHING:
           break;
       }
-    });
-
-    // final deviceInfo = DeviceInfoPlugin();
-    // String? device;
-    // if (Platform.isAndroid) {
-    //   final androidInfo = await deviceInfo.androidInfo;
-    //   device = androidInfo.model;
-    // } else if (Platform.isIOS) {
-    //   final iosInfo = await deviceInfo.iosInfo;
-    //   device = iosInfo.model;
-    // }
-
-    // service.invoke(
-    //   'update',
-    //   {
-    //     "current_date": DateTime.now().toIso8601String(),
-    //     "device": device,
-    //   },
-    // );
+    } catch (e) {
+      await SystemAlertWindow.closeSystemWindow(
+          prefMode: SystemWindowPrefMode.OVERLAY);
+      print("Error in _listenPhoneState: $e");
+    }
   });
+}
+
+@pragma('vm:entry-point')
+Future<bool> onIosBackground(ServiceInstance service) async {
+  WidgetsFlutterBinding.ensureInitialized();
+  DartPluginRegistrant.ensureInitialized();
+  SharedPreferences preferences = await SharedPreferences.getInstance();
+  await preferences.reload();
+  final log = preferences.getStringList('log') ?? <String>[];
+  log.add(DateTime.now().toIso8601String());
+  await preferences.setStringList('log', log);
+  return true;
 }
 
 class MyApp extends StatelessWidget {

@@ -91,6 +91,12 @@ class StaffCrudOperations {
   }
 
   Map<int, Map<String, dynamic>> readSpecificStaff(var value, String type) {
+    if (value == null || (value is String && value.isEmpty)) {
+      print('Error: Search value is null or empty');
+      print(value);
+      return {};
+    }
+
     String q;
     if (type == 'dept') {
       q = 'deptCode';
@@ -105,6 +111,7 @@ class StaffCrudOperations {
     }
 
     final rawData = _staffDataBox.get('staff', defaultValue: {});
+
     if (rawData is Map) {
       final Map<int, Map<String, dynamic>> staffData =
           Map<int, Map<String, dynamic>>.from(rawData.map((key, value) =>
@@ -113,8 +120,13 @@ class StaffCrudOperations {
       final filteredData = Map<int, Map<String, dynamic>>.fromEntries(
           staffData.entries.where((entry) {
         if (type == 'user') {
-          return entry.value[q] != null &&
-              entry.value[q].split(',').map((e) => e.trim()).contains(value);
+          if (entry.value[q] == null) {
+            return false;
+          }
+          final emails =
+              entry.value[q].split(',').map((e) => e.trim()).toList();
+          final contains = emails.contains(value);
+          return contains;
         } else if (type == 'name' || type == 'number') {
           return entry.value[q] != null &&
               entry.value[q]

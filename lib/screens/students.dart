@@ -64,18 +64,23 @@ class _UtilityPageState extends State<UtilityPage> {
     Size size = MediaQuery.of(context).size;
 
     var studentsFilterList = [];
-    var studentsList = filterValue == 1
-        ? StudentCrudOperations().readStudents("live").values.toList()
-        : StudentCrudOperations().readStudents("alumni").values.toList();
+    // Change this part to include both live and alumni students
+    var liveStudents =
+        StudentCrudOperations().readStudents("live").values.toList();
+    var alumniStudents =
+        StudentCrudOperations().readStudents("alumni").values.toList();
+    var allStudents = [...liveStudents, ...alumniStudents];
+
+    var studentsList = filterValue == 1 ? liveStudents : alumniStudents;
 
     var studentBatchSet = studentsList
         .map((student) => student['student_batch'])
         .toSet()
         .toList();
 
-    // Filter the students list based on the search query
+    // Update the search logic to use allStudents instead of studentsList
     if (typedText.isNotEmpty) {
-      studentsFilterList = studentsList
+      studentsFilterList = allStudents
           .where((student) => student['student_name']
               .toLowerCase()
               .contains(typedText.toLowerCase()))
@@ -292,33 +297,29 @@ class _UtilityPageState extends State<UtilityPage> {
                   icon: const Icon(Icons.qr_code_scanner_outlined,
                       color: Colors.white),
                   onPressed: () async {
-                    await Navigator.of(context).push(
+                    final String? scannedValue =
+                        await Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (context) => AiBarcodeScanner(
                           onDispose: () {
-                            // This is called when the barcode scanner is disposed.
                             debugPrint("Barcode scanner disposed!");
                           },
-                          hideGalleryButton:
-                              false, // Show or hide the gallery button
+                          hideGalleryButton: false,
                           controller: MobileScannerController(
-                            detectionSpeed: DetectionSpeed
-                                .noDuplicates, // Adjust detection speed
+                            detectionSpeed: DetectionSpeed.noDuplicates,
                           ),
                           onDetect: (BarcodeCapture capture) {
                             final String? scannedValue =
                                 capture.barcodes.first.rawValue;
                             debugPrint("Barcode scanned: $scannedValue");
-
                             if (scannedValue != null) {
-                              _handleScannedAdmissionNumber(scannedValue);
+                              Navigator.of(context).pop(scannedValue);
                             }
                           },
                           validator: (value) {
                             if (value.barcodes.isEmpty) {
                               return false;
                             }
-                            // Validate that the scanned value is a number
                             final scannedValue = value.barcodes.first.rawValue;
                             return scannedValue != null &&
                                 int.tryParse(scannedValue) != null;
@@ -326,6 +327,10 @@ class _UtilityPageState extends State<UtilityPage> {
                         ),
                       ),
                     );
+
+                    if (scannedValue != null) {
+                      await _handleScannedAdmissionNumber(scannedValue);
+                    }
                   },
                 ),
               ),

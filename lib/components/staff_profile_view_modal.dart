@@ -1,10 +1,12 @@
+import 'package:ajce_staff_contacts/hive/dept_crud_operations.dart';
 import 'package:ajce_staff_contacts/provider/favorites_provider.dart';
 import 'package:ajce_staff_contacts/components/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import 'package:line_icons/line_icons.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
+// import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 
 Future<dynamic> StaffProfileView(BuildContext context, List staffData) {
   Size size = MediaQuery.of(context).size;
@@ -67,7 +69,7 @@ Future<dynamic> StaffProfileView(BuildContext context, List staffData) {
                     height: 5,
                   ),
                   Text(
-                    "${staffData[0]['designation']}",
+                    "${staffData[0]['designation']} (${DeptCrudOperations().getDepartmentByCode(staffData[0]['deptCode'])?['deptshort'] ?? 'Unknown Department'})",
                     style: TextStyle(
                         fontSize: size.width * 0.04,
                         color: Colors.grey,
@@ -87,55 +89,52 @@ Future<dynamic> StaffProfileView(BuildContext context, List staffData) {
                               onTap: () async {
                                 final List<String> phoneNumbers =
                                     staffData[0]['contact_mobiles'].split(',');
-                                phoneNumbers.length != 1
-                                    ? showDialog(
-                                        context: context,
-                                        builder: (BuildContext context) {
-                                          return AlertDialog(
-                                            title: const Text(
-                                              'Select a Number to Call',
-                                              style: TextStyle(fontSize: 18),
-                                            ),
-                                            content: SingleChildScrollView(
-                                              child: ListBody(
-                                                children:
-                                                    phoneNumbers.map((phone) {
-                                                  return GestureDetector(
-                                                    onTap: () => UrlLauncher()
-                                                        .phoneUrl(phone),
-                                                    child: GestureDetector(
-                                                      child: Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .spaceBetween,
-                                                        children: [
-                                                          Text(
-                                                            "+$phone",
-                                                            style:
-                                                                const TextStyle(
-                                                              fontSize: 18,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w700,
-                                                            ),
-                                                          ),
-                                                          const Icon(Icons
-                                                              .phone_outlined)
-                                                        ],
+                                if (phoneNumbers.length != 1) {
+                                  showDialog(
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      return AlertDialog(
+                                        title: const Text(
+                                          'Select a Number to Call',
+                                          style: TextStyle(fontSize: 18),
+                                        ),
+                                        content: SingleChildScrollView(
+                                          child: ListBody(
+                                            children: phoneNumbers.map((phone) {
+                                              return GestureDetector(
+                                                onTap: () async {
+                                                  Navigator.of(context).pop();
+                                                  await FlutterPhoneDirectCaller
+                                                      .callNumber("+$phone");
+                                                },
+                                                child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: [
+                                                    Text(
+                                                      "+$phone",
+                                                      style: const TextStyle(
+                                                        fontSize: 18,
+                                                        fontWeight:
+                                                            FontWeight.w700,
                                                       ),
                                                     ),
-                                                  );
-                                                }).toList(),
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      )
-                                    : await FlutterPhoneDirectCaller.callNumber(
-                                        staffData[0]['contact_mobiles']);
-
-                                // : UrlLauncher().phoneUrl(
-                                //     staffData[0]['contact_mobiles']);
+                                                    const Icon(
+                                                        Icons.phone_outlined)
+                                                  ],
+                                                ),
+                                              );
+                                            }).toList(),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  );
+                                } else {
+                                  await FlutterPhoneDirectCaller.callNumber(
+                                      "+${phoneNumbers[0]}");
+                                }
                               },
                               child: SizedBox(
                                 width: 50,

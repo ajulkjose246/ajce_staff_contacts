@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:ajce_staff_contacts/components/error_image.dart';
 import 'package:ajce_staff_contacts/components/student_profile_view_modal.dart';
 import 'package:ajce_staff_contacts/hive/students_crud_operations.dart';
@@ -85,7 +83,7 @@ class _StudentListviewState extends State<StudentListview> {
                       softWrap: true,
                     ),
                     Text(
-                      "${studentData['student_type']}",
+                      "${widget.studentCode} ( ${studentData['student_type']} ) ",
                       style: TextStyle(
                           fontSize: size.width * 0.035,
                           color: Colors.grey,

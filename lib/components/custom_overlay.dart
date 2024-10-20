@@ -41,10 +41,14 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
   String _staffImage =
       "https://api.multiavatar.com/x-slayer.png"; // To store the staff department
 
+  bool _showCallerId = true; // New variable to control overlay visibility
+
   @override
   void initState() {
     super.initState();
-    _requestPermissions();
+    if (_showCallerId) {
+      _requestPermissions();
+    }
     _listenPhoneState();
   }
 
@@ -115,10 +119,11 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
   }
 
   void _showOverlayWindow(String phoneNumber) async {
-    if (!_isShowingWindow) {
+    if (!_isShowingWindow && _showCallerId) {
+      final screenWidth = MediaQuery.of(context).size.width;
       SystemAlertWindow.showSystemWindow(
         height: 200,
-        width: MediaQuery.of(context).size.width.floor(),
+        width: screenWidth.toInt(),
         gravity: SystemWindowGravity.CENTER,
         prefMode: prefMode,
         notificationBody: phoneNumber,
@@ -149,6 +154,11 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_showCallerId) {
+      return const SizedBox
+          .shrink(); // Return an empty widget when _showCallerId is false
+    }
+
     return Material(
       color: Colors.transparent,
       child: Center(

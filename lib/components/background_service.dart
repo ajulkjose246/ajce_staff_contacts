@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:system_alert_window/system_alert_window.dart';
 import 'package:phone_state/phone_state.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void initializeService() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,10 +40,18 @@ Future<bool> onIosBackground(ServiceInstance service) async {
 void onServiceStart(ServiceInstance service) async {
   DartPluginRegistrant.ensureInitialized();
 
-  SystemAlertWindow.requestPermissions(prefMode: SystemWindowPrefMode.OVERLAY);
+  // Get the _showCallerId preference
+  final prefs = await SharedPreferences.getInstance();
+  bool _showCallerId = prefs.getBool('showCallerId') ?? false;
+
+  // Only request permissions if _showCallerId is true
+  if (_showCallerId) {
+    SystemAlertWindow.requestPermissions(
+        prefMode: SystemWindowPrefMode.OVERLAY);
+  }
 
   PhoneState.stream.listen((event) async {
-    String incomingPhoneNumber = "Unknown"; // To store the phone number
+    String incomingPhoneNumber = "Unknown";
 
     try {
       switch (event.status) {
@@ -50,7 +59,7 @@ void onServiceStart(ServiceInstance service) async {
         case PhoneStateStatus.CALL_STARTED:
           incomingPhoneNumber = event.number ?? "Unknown";
 
-          if (incomingPhoneNumber != "Unknown") {
+          if (incomingPhoneNumber != "Unknown" && _showCallerId) {
             String cleanedNumber =
                 incomingPhoneNumber.replaceAll(RegExp(r'\D'), '');
 
@@ -62,12 +71,7 @@ void onServiceStart(ServiceInstance service) async {
                 final staff = staffDetails.values.first;
                 if (staff['staffName'] != null) {
                   showOverlayWindow();
-                } else {
-                  hideOverlayWindow();
                 }
-              } else {
-                hideOverlayWindow();
-                print("No staff found with this number");
               }
             } catch (e) {
               print("Error retrieving staff details: $e");
@@ -77,13 +81,14 @@ void onServiceStart(ServiceInstance service) async {
           print("Incoming Phone Number: $incomingPhoneNumber");
           break;
         case PhoneStateStatus.CALL_ENDED:
-          hideOverlayWindow();
+          if (_showCallerId) {
+            hideOverlayWindow();
+          }
           break;
         case PhoneStateStatus.NOTHING:
           break;
       }
     } catch (e) {
-      hideOverlayWindow();
       print("Error in _listenPhoneState: $e");
     }
   });

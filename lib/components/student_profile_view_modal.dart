@@ -9,7 +9,6 @@ import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 
 Future<dynamic> StudentProfileView(
     BuildContext context, Map<String, dynamic> studentData) {
-  print(studentData);
   Size size = MediaQuery.of(context).size;
   return showModalBottomSheet(
     isDismissible: true,
@@ -64,7 +63,7 @@ Future<dynamic> StudentProfileView(
                     height: 10,
                   ),
                   Text(
-                    "${studentData['student_name']}",
+                    "${studentData['student_name']} ( ${studentData['student_type']} ) ",
                     style: TextStyle(
                         fontSize: size.width * 0.04,
                         fontWeight: FontWeight.w900),
@@ -76,7 +75,7 @@ Future<dynamic> StudentProfileView(
                     height: 5,
                   ),
                   Text(
-                    "${studentData['student_type']}",
+                    "${studentData['student_admno']}",
                     style: TextStyle(
                         fontSize: size.width * 0.04,
                         color: Colors.grey,
