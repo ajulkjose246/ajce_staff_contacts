@@ -1,45 +1,32 @@
 // ignore_for_file: avoid_print
-
+import 'package:easy_url_launcher/easy_url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/material.dart';
 
 class UrlLauncher {
-  whatsappUrl(var number) async {
-    final Uri url = Uri.parse("whatsapp://send?phone=$number");
+  Future<void> whatsappUrl(String number, BuildContext context) async {
     try {
-      if (await canLaunchUrl(url)) {
-        await launchUrl(url);
-      } else {
-        print('Cannot launch URL');
-      }
+      // Check if the number starts with the Indian country code
+      String formattedNumber = number.startsWith('91') ? number : '+91$number';
+
+      // Remove any spaces or hyphens from the number
+      formattedNumber = formattedNumber.replaceAll(RegExp(r'[\s-]'), '');
+
+      await EasyLauncher.sendToWhatsApp(
+          phone: formattedNumber, message: "Hello");
     } catch (e) {
-      print('Error: $e');
+      print('Error launching WhatsApp: $e');
+      _showErrorDialog(context,
+          'Unable to open WhatsApp. Please make sure it\'s installed or try again later.');
     }
   }
 
-  phoneUrl(var number) async {
-    final Uri url = Uri(scheme: 'tel', path: "+$number");
-    try {
-      if (await canLaunchUrl(url)) {
-        await launchUrl(url);
-      } else {
-        print('Cannot launch URL');
-      }
-    } catch (e) {
-      print('Error: $e');
-    }
+  Future<void> phoneUrl(String number) async {
+    await EasyLauncher.call(number: number);
   }
 
-  mailUrl(var emailid) async {
-    final Uri emailUri = Uri(
-      scheme: 'mailto',
-      path: emailid,
-    );
-    if (await canLaunchUrl(emailUri)) {
-      await launchUrl(emailUri);
-    } else {
-      throw 'Could not launch $emailUri';
-    }
+  Future<void> mailUrl(String emailId) async {
+    await EasyLauncher.email(email: emailId);
   }
 
   Future<void> shareContent(
@@ -56,5 +43,23 @@ class UrlLauncher {
     } catch (e) {
       print("Failed to share content: $e");
     }
+  }
+
+  void _showErrorDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Error'),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              child: Text('OK'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

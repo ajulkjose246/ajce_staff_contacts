@@ -180,52 +180,160 @@ Future<dynamic> StaffProfileView(BuildContext context, List staffData) {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              staffData[0]['contact_mobiles'] != null
-                                  ? GestureDetector(
-                                      onTap: () async {
-                                        final List<String> phoneNumbers =
-                                            staffData[0]['contact_mobiles']
-                                                .split(',');
-                                        if (phoneNumbers.length != 1) {
-                                          showDialog(
+                              if (staffData[0]['contact_mobiles'] != null &&
+                                  staffData[0]['contact_mobiles'].isNotEmpty)
+                                GestureDetector(
+                                  onTap: () async {
+                                    final List<String> phoneNumbers =
+                                        staffData[0]['contact_mobiles']
+                                            .split(',');
+                                    if (phoneNumbers.length != 1) {
+                                      showDialog(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          return AlertDialog(
+                                            title: const Text(
+                                              'Select a Number to Call',
+                                              style: TextStyle(fontSize: 18),
+                                            ),
+                                            content: SingleChildScrollView(
+                                              child: ListBody(
+                                                children:
+                                                    phoneNumbers.map((phone) {
+                                                  return GestureDetector(
+                                                    onTap: () async {
+                                                      Navigator.of(context)
+                                                          .pop();
+                                                      await FlutterPhoneDirectCaller
+                                                          .callNumber(
+                                                              "+$phone");
+                                                    },
+                                                    child: Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
+                                                      children: [
+                                                        Text(
+                                                          "+$phone",
+                                                          style:
+                                                              const TextStyle(
+                                                            fontSize: 18,
+                                                            fontWeight:
+                                                                FontWeight.w700,
+                                                          ),
+                                                        ),
+                                                        const Icon(Icons
+                                                            .phone_outlined)
+                                                      ],
+                                                    ),
+                                                  );
+                                                }).toList(),
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      );
+                                    } else {
+                                      await FlutterPhoneDirectCaller.callNumber(
+                                          "+${phoneNumbers[0]}");
+                                    }
+                                  },
+                                  child: SizedBox(
+                                    width: 50,
+                                    height: 50,
+                                    child: Container(
+                                      decoration: const BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Color.fromRGBO(229, 230, 255, 1),
+                                      ),
+                                      child: const Icon(LineIcons.phone),
+                                    ),
+                                  ),
+                                ),
+                              if (staffData[0]['contact_mobiles'] != null &&
+                                  staffData[0]['contact_mobiles'].isNotEmpty)
+                                const SizedBox(width: 20),
+                              if (staffData[0]['contact_mobiles'] != null &&
+                                  staffData[0]['contact_mobiles'].isNotEmpty)
+                                GestureDetector(
+                                  onTap: () => UrlLauncher().whatsappUrl(
+                                      staffData[0]['contact_mobiles'], context),
+                                  child: SizedBox(
+                                    width: 50,
+                                    height: 50,
+                                    child: Container(
+                                      decoration: const BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Color.fromRGBO(229, 230, 255, 1),
+                                      ),
+                                      child: const Icon(LineIcons.whatSApp),
+                                    ),
+                                  ),
+                                ),
+                              if (staffData[0]['contact_emails'] != null &&
+                                  staffData[0]['contact_emails'].isNotEmpty)
+                                const SizedBox(width: 20),
+                              if (staffData[0]['contact_emails'] != null &&
+                                  staffData[0]['contact_emails'].isNotEmpty)
+                                GestureDetector(
+                                  onTap: () async {
+                                    final List<String> mailId = staffData[0]
+                                            ['contact_emails']
+                                        .split(',');
+                                    mailId.length != 1
+                                        ? showDialog(
                                             context: context,
                                             builder: (BuildContext context) {
                                               return AlertDialog(
                                                 title: const Text(
-                                                  'Select a Number to Call',
+                                                  'Select a Mail Id',
                                                   style:
                                                       TextStyle(fontSize: 18),
                                                 ),
                                                 content: SingleChildScrollView(
                                                   child: ListBody(
-                                                    children: phoneNumbers
-                                                        .map((phone) {
+                                                    children:
+                                                        mailId.map((mail) {
                                                       return GestureDetector(
-                                                        onTap: () async {
-                                                          Navigator.of(context)
-                                                              .pop();
-                                                          await FlutterPhoneDirectCaller
-                                                              .callNumber(
-                                                                  "+$phone");
-                                                        },
-                                                        child: Row(
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .spaceBetween,
-                                                          children: [
-                                                            Text(
-                                                              "+$phone",
-                                                              style:
-                                                                  const TextStyle(
-                                                                fontSize: 18,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w700,
-                                                              ),
+                                                        onTap: () =>
+                                                            UrlLauncher()
+                                                                .mailUrl(mail),
+                                                        child: GestureDetector(
+                                                          child: Padding(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .symmetric(
+                                                                    vertical:
+                                                                        5),
+                                                            child: Row(
+                                                              mainAxisAlignment:
+                                                                  MainAxisAlignment
+                                                                      .spaceBetween,
+                                                              children: [
+                                                                SizedBox(
+                                                                  width: 200,
+                                                                  child: Text(
+                                                                    mail,
+                                                                    overflow:
+                                                                        TextOverflow
+                                                                            .ellipsis,
+                                                                    softWrap:
+                                                                        false,
+                                                                    style:
+                                                                        const TextStyle(
+                                                                      fontSize:
+                                                                          18,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .w700,
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                                const Icon(Icons
+                                                                    .mail_outline)
+                                                              ],
                                                             ),
-                                                            const Icon(Icons
-                                                                .phone_outlined)
-                                                          ],
+                                                          ),
                                                         ),
                                                       );
                                                     }).toList(),
@@ -233,143 +341,23 @@ Future<dynamic> StaffProfileView(BuildContext context, List staffData) {
                                                 ),
                                               );
                                             },
-                                          );
-                                        } else {
-                                          await FlutterPhoneDirectCaller
-                                              .callNumber(
-                                                  "+${phoneNumbers[0]}");
-                                        }
-                                      },
-                                      child: SizedBox(
-                                        width: 50,
-                                        height: 50,
-                                        child: Container(
-                                          decoration: const BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: Color.fromRGBO(
-                                                229, 230, 255, 1),
-                                          ),
-                                          child: const Icon(LineIcons.phone),
-                                        ),
+                                          )
+                                        : UrlLauncher().mailUrl(
+                                            staffData[0]['contact_emails']);
+                                  },
+                                  child: SizedBox(
+                                    width: 50,
+                                    height: 50,
+                                    child: Container(
+                                      decoration: const BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Color.fromRGBO(229, 230, 255, 1),
                                       ),
-                                    )
-                                  : Container(),
-                              const SizedBox(
-                                width: 20,
-                              ),
-                              staffData[0]['contact_mobiles'] != null
-                                  ? GestureDetector(
-                                      onTap: () => UrlLauncher().whatsappUrl(
-                                          staffData[0]['contact_mobiles']),
-                                      child: SizedBox(
-                                        width: 50,
-                                        height: 50,
-                                        child: Container(
-                                          decoration: const BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: Color.fromRGBO(
-                                                229, 230, 255, 1),
-                                          ),
-                                          child: const Icon(LineIcons.whatSApp),
-                                        ),
-                                      ),
-                                    )
-                                  : Container(),
-                              const SizedBox(
-                                width: 20,
-                              ),
-                              staffData[0]['contact_emails'] != null
-                                  ? GestureDetector(
-                                      onTap: () async {
-                                        final List<String> mailId = staffData[0]
-                                                ['contact_emails']
-                                            .split(',');
-                                        mailId.length != 1
-                                            ? showDialog(
-                                                context: context,
-                                                builder:
-                                                    (BuildContext context) {
-                                                  return AlertDialog(
-                                                    title: const Text(
-                                                      'Select a Mail Id',
-                                                      style: TextStyle(
-                                                          fontSize: 18),
-                                                    ),
-                                                    content:
-                                                        SingleChildScrollView(
-                                                      child: ListBody(
-                                                        children:
-                                                            mailId.map((mail) {
-                                                          return GestureDetector(
-                                                            onTap: () =>
-                                                                UrlLauncher()
-                                                                    .mailUrl(
-                                                                        mail),
-                                                            child:
-                                                                GestureDetector(
-                                                              child: Padding(
-                                                                padding:
-                                                                    const EdgeInsets
-                                                                        .symmetric(
-                                                                        vertical:
-                                                                            5),
-                                                                child: Row(
-                                                                  mainAxisAlignment:
-                                                                      MainAxisAlignment
-                                                                          .spaceBetween,
-                                                                  children: [
-                                                                    SizedBox(
-                                                                      width:
-                                                                          200,
-                                                                      child:
-                                                                          Text(
-                                                                        mail,
-                                                                        overflow:
-                                                                            TextOverflow.ellipsis,
-                                                                        softWrap:
-                                                                            false,
-                                                                        style:
-                                                                            const TextStyle(
-                                                                          fontSize:
-                                                                              18,
-                                                                          fontWeight:
-                                                                              FontWeight.w700,
-                                                                        ),
-                                                                      ),
-                                                                    ),
-                                                                    const Icon(Icons
-                                                                        .mail_outline)
-                                                                  ],
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          );
-                                                        }).toList(),
-                                                      ),
-                                                    ),
-                                                  );
-                                                },
-                                              )
-                                            : UrlLauncher().mailUrl(
-                                                staffData[0]['contact_emails']);
-                                      },
-                                      child: SizedBox(
-                                        width: 50,
-                                        height: 50,
-                                        child: Container(
-                                          decoration: const BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: Color.fromRGBO(
-                                                229, 230, 255, 1),
-                                          ),
-                                          child: const Icon(Icons.mail_outline),
-                                        ),
-                                      ),
-                                    )
-                                  : Container(),
-                              const SizedBox(
-                                width: 20,
-                              ),
+                                      child: const Icon(Icons.mail_outline),
+                                    ),
+                                  ),
+                                ),
+                              const SizedBox(width: 20),
                               GestureDetector(
                                 onTap: () {
                                   UrlLauncher().shareContent(
@@ -390,9 +378,7 @@ Future<dynamic> StaffProfileView(BuildContext context, List staffData) {
                                   ),
                                 ),
                               ),
-                              const SizedBox(
-                                width: 20,
-                              ),
+                              const SizedBox(width: 20),
                               SizedBox(
                                 width: 50,
                                 height: 50,
