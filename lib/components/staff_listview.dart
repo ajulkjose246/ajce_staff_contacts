@@ -51,8 +51,16 @@ class _StaffListviewState extends State<StaffListview> {
                       imageUrl: staffData[0]['photo'] ?? "",
                       fit: BoxFit.cover,
                       alignment: Alignment.topCenter,
-                      placeholder: (context, url) =>
-                          const Center(child: CircularProgressIndicator()),
+                      placeholder: (context, url) => Center(
+                        child: Text(
+                          staffData[0]['staffName']?[0] ?? '',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ),
                       errorWidget: (context, url, error) =>
                           const Icon(Icons.error),
                     ),

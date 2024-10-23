@@ -4,8 +4,10 @@ class StudentCrudOperations {
   final _studentDataBox = Hive.box('studentsDataBox');
 
   // CRUD Timestamp
-  void writeTimestamp(int timestamp) {
+
+  bool writeTimestamp(int timestamp) {
     _studentDataBox.put('timestamp', timestamp);
+    return timestamp == 0;
   }
 
   int readTimestamp() {
@@ -62,5 +64,10 @@ class StudentCrudOperations {
       students.remove(admNo);
     }
     _studentDataBox.put('${arrayName}Students', students);
+  }
+
+  // Clear all students for a specific array
+  void clearStudents(String arrayName) {
+    _studentDataBox.delete('${arrayName}Students');
   }
 }

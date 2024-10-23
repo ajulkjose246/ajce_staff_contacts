@@ -50,8 +50,16 @@ class _StudentListviewState extends State<StudentListview> {
                       imageUrl: studentData!['student_photo'] ?? "",
                       fit: BoxFit.cover,
                       alignment: Alignment.topCenter,
-                      placeholder: (context, url) =>
-                          const Center(child: CircularProgressIndicator()),
+                      placeholder: (context, url) {
+                        final studentName =
+                            studentData['student_name'] ?? 'Unknown';
+                        final firstLetter = studentName.isNotEmpty
+                            ? studentName[0].toUpperCase()
+                            : '?';
+                        return ErrorImage(
+                          firstLetter: firstLetter,
+                        );
+                      },
                       errorWidget: (context, url, error) {
                         final studentName =
                             studentData['student_name'] ?? 'Unknown';

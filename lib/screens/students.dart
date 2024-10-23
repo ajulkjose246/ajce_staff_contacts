@@ -31,27 +31,12 @@ class _UtilityPageState extends State<UtilityPage> {
       return;
     }
 
-    // Fetch student details
-    final studentDetails = await GetStudents().getSpecificStudent(adminNo);
-    if (studentDetails != null && studentDetails['stud'] != null) {
-      final studData = studentDetails['stud'] as Map<String, dynamic>;
-
-      // Convert the API response to match the expected format for StudentProfileView
-      final formattedStudentData = {
-        'student_name': studData['studentName'],
-        'student_type': studData['accommodation'],
-        'student_photo': studData['photo'],
-        'student_mobile': studData['fatherno'],
-        'student_mobiles': studData['fatherno'],
-        'className': studData['className'],
-        'deptShort': studData['deptShort'],
-        'ctname': studData['ctname'],
-        'ctcontact': studData['ctcontact'],
-        'room_num': studData['room_num'],
-      };
-
+    // Fetch student details from local storage
+    final studentDetails =
+        StudentCrudOperations().readSpecificStudentById(admissionNumber);
+    if (studentDetails != null) {
       // Show the StudentProfileView modal
-      await StudentProfileView(context, formattedStudentData);
+      await StudentProfileView(context, studentDetails);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Student not found or data incomplete')),
@@ -78,12 +63,14 @@ class _UtilityPageState extends State<UtilityPage> {
         .toSet()
         .toList();
 
-    // Update the search logic to use allStudents instead of studentsList
+    // Update the search logic to include admission number
     if (typedText.isNotEmpty) {
       studentsFilterList = allStudents
-          .where((student) => student['student_name']
-              .toLowerCase()
-              .contains(typedText.toLowerCase()))
+          .where((student) =>
+              student['student_name']
+                  .toLowerCase()
+                  .contains(typedText.toLowerCase()) ||
+              student['student_admno'].toString().contains(typedText))
           .toList();
     }
 
@@ -392,7 +379,10 @@ class _UtilityPageState extends State<UtilityPage> {
   void _toggleSearch() {
     setState(() {
       toggle = !toggle;
-      if (!toggle) {
+      if (toggle) {
+        // Request focus when the search is toggled on
+        _focusNode.requestFocus();
+      } else {
         typedText = '';
         _textEditingController.clear();
         _focusNode.unfocus();

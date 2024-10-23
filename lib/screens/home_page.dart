@@ -1,3 +1,4 @@
+import 'package:ajce_staff_contacts/apiData/get_students.dart';
 import 'package:ajce_staff_contacts/provider/favorites_provider.dart';
 import 'package:ajce_staff_contacts/components/staff_profile_view_modal.dart';
 import 'package:ajce_staff_contacts/components/staff_listview.dart';
@@ -31,6 +32,8 @@ class _HomePageState extends State<HomePage> {
         .getStaffGenderCountsByDepartment(userData['deptCode']);
     Map<String, int> totalGenderCount =
         StaffCrudOperations().getStaffGenderCounts();
+    GetStudents().getStudentsAPI(userData['deptCode']);
+
     return Container(
       color: const Color.fromRGBO(236, 241, 244, 1),
       child: ListView(

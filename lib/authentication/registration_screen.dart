@@ -1,10 +1,8 @@
 import 'package:ajce_staff_contacts/apiData/get_dept.dart';
 import 'package:ajce_staff_contacts/apiData/get_staff.dart';
 import 'package:ajce_staff_contacts/apiData/get_staff_groups.dart';
-import 'package:ajce_staff_contacts/apiData/get_students.dart';
 import 'package:ajce_staff_contacts/authentication/auth_services.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class RegistrationScreen extends StatefulWidget {
   const RegistrationScreen({super.key});
@@ -28,7 +26,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         GetDept().getDepartmentsAPI(),
         GetStaff().getStaffContactsAPI(),
         GetStaffGroups().getStaffGroupsAPI(),
-        GetStudents().getStudentsAPI(),
       ]);
       if (mounted) {
         setState(() {
@@ -68,7 +65,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     children: [
                       CircularProgressIndicator(),
                       Text(
-                        "Fetching...",
+                        "Getting ready, please wait...",
                         style: TextStyle(
                             fontSize: 20, fontWeight: FontWeight.w900),
                       )
@@ -82,20 +79,31 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            spreadRadius: 1,
+                            blurRadius: 3,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Spacer(),
-                          Image.asset("assets/img/google.png"),
+                          Image.asset(
+                            "assets/img/google.png",
+                            height: 40,
+                            width: 40,
+                          ),
+                          const SizedBox(width: 10),
                           const Text(
                             "Sign in with Google",
                             style: TextStyle(
-                                fontWeight: FontWeight.w900, fontSize: 18),
+                              fontWeight: FontWeight.w900,
+                              fontSize: 16,
+                            ),
                           ),
-                          const SizedBox(
-                            width: 10,
-                          ),
-                          const Spacer(),
                         ],
                       ),
                     ),

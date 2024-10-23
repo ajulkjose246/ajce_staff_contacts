@@ -3,10 +3,10 @@ import 'dart:isolate';
 import 'package:ajce_staff_contacts/apiData/get_dept.dart';
 import 'package:ajce_staff_contacts/apiData/get_staff.dart';
 import 'package:ajce_staff_contacts/apiData/get_staff_groups.dart';
-import 'package:ajce_staff_contacts/apiData/get_students.dart';
 import 'package:ajce_staff_contacts/components/staff_listview.dart';
 import 'package:ajce_staff_contacts/hive/dept_crud_operations.dart';
 import 'package:ajce_staff_contacts/hive/staff_group_crud_operations.dart';
+import 'package:ajce_staff_contacts/hive/students_crud_operations.dart';
 import 'package:ajce_staff_contacts/hive/user_data.dart';
 import 'package:ajce_staff_contacts/screens/department_page.dart';
 import 'package:ajce_staff_contacts/hive/staff_crud_operations.dart';
@@ -19,8 +19,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:phone_state/phone_state.dart';
-import 'package:system_alert_window/system_alert_window.dart';
 
 class ContainerPage extends StatefulWidget {
   const ContainerPage({super.key});
@@ -56,7 +54,6 @@ class _ContainerPageState extends State<ContainerPage>
     _textEditingController.dispose();
     _focusNode.dispose();
     _con.dispose();
-    SystemAlertWindow.removeOnClickListener();
     super.dispose();
   }
 
@@ -75,8 +72,6 @@ class _ContainerPageState extends State<ContainerPage>
       vsync: this,
       duration: const Duration(milliseconds: 375),
     );
-    _requestPermissions();
-    _listenPhoneState();
     super.initState();
 
     _focusNode.addListener(() {
@@ -100,58 +95,10 @@ class _ContainerPageState extends State<ContainerPage>
     });
   }
 
-  bool _isShowingWindow = false;
-  SystemWindowPrefMode prefMode = SystemWindowPrefMode.OVERLAY;
   SendPort? homePort;
   String? latestMessageFromOverlay;
 
-  void _listenPhoneState() {
-    PhoneState.stream.listen((event) {
-      switch (event.status) {
-        case PhoneStateStatus.CALL_INCOMING:
-        case PhoneStateStatus.CALL_STARTED:
-          _showOverlayWindow();
-          print("container page");
-          print(event.number);
-          print("container page");
-          break;
-        case PhoneStateStatus.CALL_ENDED:
-          _hideOverlayWindow();
-          break;
-        case PhoneStateStatus.NOTHING:
-          break;
-      }
-    });
-  }
-
-  Future<void> _requestPermissions() async {
-    await SystemAlertWindow.requestPermissions(prefMode: prefMode);
-  }
-
-  void _showOverlayWindow() async {
-    if (!_isShowingWindow) {
-      await SystemAlertWindow.sendMessageToOverlay('show system window');
-      SystemAlertWindow.showSystemWindow(
-          height: 200,
-          width: MediaQuery.of(context).size.width.floor(),
-          gravity: SystemWindowGravity.CENTER,
-          prefMode: prefMode);
-      setState(() {
-        _isShowingWindow = true;
-      });
-    }
-  }
-
-  void _hideOverlayWindow() async {
-    if (_isShowingWindow) {
-      setState(() {
-        _isShowingWindow = false;
-      });
-      await SystemAlertWindow.closeSystemWindow(prefMode: prefMode);
-    }
-  }
-
-  Future<void> _loadData() async {
+  Future<void> _loadData(int deptCode) async {
     bool staffTimestampSet = StaffCrudOperations().writeTimestamp(0);
     bool staffGroupTimestampSet = StaffGroupCrudOperations().writeTimestamp(0);
     bool deptTimestampSet = DeptCrudOperations().writeTimestamp(0);
@@ -162,7 +109,6 @@ class _ContainerPageState extends State<ContainerPage>
           GetDept().getDepartmentsAPI(),
           GetStaff().getStaffContactsAPI(),
           GetStaffGroups().getStaffGroupsAPI(),
-          GetStudents().getStudentsAPI(),
         ]);
         if (mounted) {
           setState(() {
@@ -200,7 +146,7 @@ class _ContainerPageState extends State<ContainerPage>
               PopupMenuButton<int>(
                 onSelected: (value) async {
                   if (value == 0) {
-                    _loadData();
+                    _loadData(userData['deptCode']);
                   } else if (value == 1) {
                     try {
                       bool staffTimestampSet =
@@ -209,10 +155,13 @@ class _ContainerPageState extends State<ContainerPage>
                           StaffGroupCrudOperations().writeTimestamp(0);
                       bool deptTimestampSet =
                           DeptCrudOperations().writeTimestamp(0);
+                      bool studentTimestampSet =
+                          StudentCrudOperations().writeTimestamp(0);
 
                       if (staffTimestampSet &&
                           staffGroupTimestampSet &&
-                          deptTimestampSet) {
+                          deptTimestampSet &&
+                          studentTimestampSet) {
                         await FirebaseAuth.instance.signOut();
                         await GoogleSignIn().signOut();
                       }

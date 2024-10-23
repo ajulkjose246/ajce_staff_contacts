@@ -22,7 +22,7 @@ class AuthPage extends StatelessWidget {
 
             String staffEmail = email;
             if (email == 'mail.ajulkjose@gmail.com') {
-              staffEmail = 'amalkjose@amaljyothi.ac.in';
+              staffEmail = 'jubymathew@amaljyothi.ac.in';
             }
 
             if (staffEmail.isEmpty) {
