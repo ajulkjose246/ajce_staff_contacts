@@ -62,6 +62,10 @@ dependencies:
   flutter_phone_direct_caller: ^2.1.1
   ai_barcode_scanner: ^5.1.1+2
   easy_url_launcher: ^0.0.7
+  audioplayers: ^6.1.0
+  just_audio: ^0.9.41
+  just_audio_background: ^0.0.1-beta.13
+  table_calendar: ^3.1.2
 
 dev_dependencies:
   flutter_test:

@@ -1,5 +1,6 @@
 import 'dart:isolate';
-
+import 'package:ajce_staff_contacts/screens/event_page.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:ajce_staff_contacts/apiData/get_dept.dart';
 import 'package:ajce_staff_contacts/apiData/get_staff.dart';
 import 'package:ajce_staff_contacts/apiData/get_staff_groups.dart';
@@ -12,7 +13,6 @@ import 'package:ajce_staff_contacts/screens/department_page.dart';
 import 'package:ajce_staff_contacts/hive/staff_crud_operations.dart';
 import 'package:ajce_staff_contacts/screens/home_page.dart';
 import 'package:ajce_staff_contacts/screens/settings_page.dart';
-import 'package:ajce_staff_contacts/screens/staff_groups.dart';
 import 'package:ajce_staff_contacts/screens/students.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -34,7 +34,7 @@ class _ContainerPageState extends State<ContainerPage>
   static const List<Widget> _widgetOptions = <Widget>[
     HomePage(),
     DepartmentPage(),
-    StaffGroups(),
+    EventPage(),
     UtilityPage(),
   ];
 
@@ -54,6 +54,7 @@ class _ContainerPageState extends State<ContainerPage>
     _textEditingController.dispose();
     _focusNode.dispose();
     _con.dispose();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -63,6 +64,9 @@ class _ContainerPageState extends State<ContainerPage>
   int toggle = 0;
   String typedText = '';
   bool _isLoading = false;
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  bool _isPlaying = false;
+  bool _isConnecting = false;
 
   @override
   void initState() {
@@ -93,6 +97,33 @@ class _ContainerPageState extends State<ContainerPage>
         _focusNode.unfocus();
       }
     });
+  }
+
+  void _toggleAudio() async {
+    final String audioUrl = 'https://icecast.octosignals.com/radio90_final';
+
+    if (_isPlaying) {
+      await _audioPlayer.stop();
+      setState(() {
+        _isPlaying = false;
+      });
+    } else {
+      setState(() {
+        _isConnecting = true;
+      });
+      try {
+        await _audioPlayer.play(UrlSource(audioUrl));
+        setState(() {
+          _isPlaying = true;
+          _isConnecting = false;
+        });
+      } catch (e) {
+        setState(() {
+          _isConnecting = false;
+        });
+        print('Error playing audio: $e');
+      }
+    }
   }
 
   SendPort? homePort;
@@ -386,6 +417,42 @@ class _ContainerPageState extends State<ContainerPage>
                         ),
                       )
                     : Container(),
+
+                // Modified Floating Action Button
+                _selectedIndex != 3
+                    ? Positioned(
+                        bottom: 70.0,
+                        right: 10.0,
+                        child: Material(
+                          color: const Color.fromRGBO(137, 14, 79, 1),
+                          borderRadius: BorderRadius.circular(30.0),
+                          child: IconButton(
+                            splashRadius: 19.0,
+                            icon: _isConnecting
+                                ? SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : _isPlaying
+                                    ? Icon(
+                                        Icons.stop,
+                                        color: Colors.white,
+                                      )
+                                    : Image.asset(
+                                        'assets/img/radio.png',
+                                        width: 30,
+                                        height: 30,
+                                        color: Colors.white,
+                                      ),
+                            onPressed: _isConnecting ? null : _toggleAudio,
+                          ),
+                        ),
+                      )
+                    : Container(),
               ],
             )
           : CircularProgressIndicator(),
@@ -422,8 +489,8 @@ class _ContainerPageState extends State<ContainerPage>
                   text: 'Departments',
                 ),
                 GButton(
-                  icon: Icons.group,
-                  text: 'Teams',
+                  icon: Icons.event_note_outlined,
+                  text: 'Events',
                 ),
                 GButton(
                   icon: Icons.groups,
